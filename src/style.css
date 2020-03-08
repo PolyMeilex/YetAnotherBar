@@ -1,0 +1,83 @@
+* {
+  /* all: unset; */
+  border: none;
+  border-radius: 0;
+  /* font-family: Roboto, Helvetica, Arial, sans-serif; */
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 0;
+}
+
+#clock,
+#pulse,
+#mpris
+{
+  font-size: 15px;
+
+  padding: 0px 10px;
+  margin: 5px 4px;
+  color: #ffffff;
+  border-radius: 10px;
+}
+#clock {
+  background-color: #ff0066;
+}
+#pulse {
+  background-color: #2ecc71;
+  color: black;
+  font-weight: 500;
+  transition-property: background-color, color;
+  transition-duration: 0.5s;
+}
+#pulse.muted{
+  background-color: #90b1b1;
+}
+
+#mpris{
+  background-color: #90b1b1;
+  color: #ffffff;
+  transition-property: background-color, color;
+  transition-duration: 0.5s;
+}
+#mpris.playing{
+  background-color: #25a75b;
+}
+#cpu{
+  /* background-color: #ff0066; */
+  /* color: #a80043; */
+  margin: 5px 4px;
+  color: #424242;
+}
+
+
+window,#main_box{
+  background: rgba(35, 41, 47, 0.5);
+  color: #ffffff;
+}
+
+
+#i3 #mode{
+  margin-left: 15px;
+}
+#i3 button {
+  background: unset;
+  /* padding: 5px 20px; */
+  padding: 0 15px;
+  background-color: transparent;
+  color: #ffffff;
+  border-bottom: 4px solid rgba(255, 255, 255, 0.2);
+}
+#i3 button.focused {
+  border-bottom: 4px solid rgba(255, 255, 255, 0.8);
+}
+#i3 button.urgent {
+  border-bottom: 4px solid rgb(226, 51, 51);
+}
+#i3 button:hover {
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inherit;
+  border-bottom: 4px solid #ffffff;
+}
+#i3 button:focus {
+  background-color: rgb(32, 32, 32);
+}
