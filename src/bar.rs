@@ -1,30 +1,21 @@
 use gtk::prelude::*;
 use gtk::{Inhibit, Window, WindowType};
-use relm::{connect, Component, Relm, Update, Widget};
+use relm::{connect, Relm, Update, Widget};
 use relm_derive::Msg;
+
+use crate::ModuleComponent;
 
 pub struct ModelParam {
     pub bar_name: String,
     pub monitor_name: String,
     pub x: i32,
     pub y: i32,
-    pub components: ModelComponents,
-}
-
-pub struct ModelComponents {
-    pub alsa: Option<Component<crate::alsa::Alsa>>,
-    pub i3: Option<Component<crate::i3::I3>>,
-    pub mpris: Option<Component<crate::mpris::Mpris>>,
-    pub cpu: Option<Component<crate::cpu::Cpu>>,
+    pub modules_left: Vec<ModuleComponent>,
+    pub modules_right: Vec<ModuleComponent>,
 }
 
 pub struct Model {
     params: ModelParam,
-    // i3: Component<crate::i3::I3>,
-    clock: Component<crate::clock::Clock>,
-    
-    // alsa: Component<crate::alsa::Alsa>,
-    // mpris: Component<crate::mpris::Mpris>,
 }
 #[derive(Msg)]
 pub enum Msg {
@@ -40,21 +31,12 @@ pub struct Bar {
 
 impl Widget for Bar {
     fn init_view(&mut self) {
-        if let Some(i3) = self.model.params.components.i3.as_ref() {
-            self.gtk_box.pack_start(i3.widget(), false, false, 0);
-        }
-        self.gtk_box
-            .pack_end(self.model.clock.widget(), false, false, 0);
-
-        if let Some(alsa) = self.model.params.components.alsa.as_ref() {
-            self.gtk_box.pack_end(alsa.widget(), false, false, 0);
-        }
-        if let Some(mpris) = self.model.params.components.mpris.as_ref() {
-            self.gtk_box.pack_end(mpris.widget(), false, false, 0);
+        for module in self.model.params.modules_left.iter() {
+            self.gtk_box.pack_start(&module.widget(), false, false, 0);
         }
 
-        if let Some(cpu) = self.model.params.components.cpu.as_ref() {
-            self.gtk_box.pack_end(cpu.widget(), false, false, 0);
+        for module in self.model.params.modules_right.iter() {
+            self.gtk_box.pack_end(&module.widget(), false, false, 0);
         }
 
         self.gtk_window.show_all();
@@ -115,10 +97,7 @@ impl Update for Bar {
         }
     }
     fn model(_: &Relm<Self>, params: ModelParam) -> Model {
-        Model {
-            params,
-            clock: relm::init::<crate::clock::Clock>(()).unwrap(),
-        }
+        Model { params }
     }
 }
 

@@ -8,19 +8,18 @@ edition = "2018"
 gio = "^0.8.0"
 gtk = "^0.8.0"
 gdk = "^0.12.0"
-# cairo-rs = "0.8.0"
-
 
 relm = "^0.19.0"
 relm-derive = "^0.19.0"
 
-chrono = "*"
+serde = "1.0"
+serde_derive = "1.0"
+toml = "0.5.6"
 
+
+chrono = "*"
 i3ipc = "0.10.1"
 alsa = "0.4.1"
 mpris = "1.1.2"
 systemstat = "0.1.5"
 
-
-# xcb = {version="0.9",features=["randr"]}
-# xcb-util ={version = "0.3.0",features = ["ewmh"]}

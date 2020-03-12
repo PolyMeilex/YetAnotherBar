@@ -2,16 +2,16 @@
 name = "bar-left"
 monitor = "DP-1"
 pos_x = 0
-pos_y = 1060
+pos_y = 1000
 
 modules_left = ["I3"]
-modules_right = ["Clock","Pulse","Mpris"]
+modules_right = ["Clock","Alsa","Mpris","Cpu"]
 
 [[bars]]
 name = "bar-right"
 monitor = "HDMI-0"
 pos_x = 1920
-pos_y = 1060
+pos_y = 1000
 
 modules_left = ["I3"]
-modules_right = ["Clock","Pulse","Mpris"]
+modules_right = ["Clock","Alsa","Mpris","Cpu"]
