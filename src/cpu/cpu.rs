@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-use relm::{Relm, Widget};
+use relm::Widget;
 use relm_derive::{widget, Msg};
 
 pub struct Model {

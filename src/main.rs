@@ -62,11 +62,12 @@ macro_rules! thread_run(
 fn main() {
     gtk::init().unwrap();
 
+    let (config, stylesheet) = config::get_config();
+
     // Stylesheet
     {
-        let stylesheet = include_bytes!("./style.css");
         let style_provider = gtk::CssProvider::new();
-        style_provider.load_from_data(stylesheet).unwrap();
+        style_provider.load_from_data(&stylesheet).unwrap();
         gtk::StyleContext::add_provider_for_screen(
             &gdk::Screen::get_default().unwrap(),
             &style_provider,
@@ -76,7 +77,6 @@ fn main() {
 
     // Init Bars From Config
     let bars = {
-        let config = config::get_config();
         let config_bars = config.bars;
 
         let mut bars = Vec::new();
