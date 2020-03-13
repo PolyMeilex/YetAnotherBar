@@ -38,8 +38,6 @@ impl Widget for Mpris {
             }
         }
     }
-    // fn subscriptions(&mut self, relm: &Relm<Self>) {}
-    // fn init_view(&mut self) {}
 
     view! {
         gtk::EventBox{

@@ -6,8 +6,7 @@ pub struct Model {
     out: String,
 }
 
-
-#[derive(Msg,Clone)]
+#[derive(Msg, Clone)]
 pub enum Msg {
     Update(String),
 }
@@ -29,11 +28,9 @@ impl Widget for Cpu {
     fn init_view(&mut self) {}
 
     view! {
-        gtk::EventBox{
-            gtk::Label {
-                text: &self.model.out,
-                widget_name: "cpu"
-            },
-        }
+        gtk::Label {
+            text: &self.model.out,
+            widget_name: "cpu"
+        },
     }
 }

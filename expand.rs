@@ -14,8 +14,14 @@ mod config {
 
 
 
+    // impl<WIDGET: relm::Widget> Base for Component<WIDGET> {}
 
 
+
+
+    // Stylesheet
+
+    // Init Bars From Config
 
 
 
@@ -26,11 +32,8 @@ mod config {
 
 
     // Alsa Thread
-
     // I3 Thread
-
     // Mpris Thread
-
     // Cpu Thread
 
 
@@ -1040,10 +1043,32 @@ mod config {
                 }
             }
         };
+    use std::path::PathBuf;
+    pub fn config_dir() -> Option<PathBuf> {
+        let home =
+            std::env::var_os("HOME").and_then(|h|
+                                                  if h.is_empty() {
+                                                      None
+                                                  } else { Some(h) });
+        if let Some(home) = home {
+            Some(PathBuf::from(home).join(".config"))
+        } else { None }
+    }
     pub fn get_config() -> Config {
-        let toml_str =
+        let config_dir = config_dir();
+        let default_config =
             "[[bars]]\nname = \"bar-left\"\nmonitor = \"DP-1\"\npos_x = 0\npos_y = 1000\n\nmodules_left = [\"I3\"]\nmodules_right = [\"Clock\",\"Alsa\",\"Mpris\",\"Cpu\"]\n\n[[bars]]\nname = \"bar-right\"\nmonitor = \"HDMI-0\"\npos_x = 1920\npos_y = 1000\n\nmodules_left = [\"I3\"]\nmodules_right = [\"Clock\",\"Alsa\",\"Mpris\",\"Cpu\"]\n";
-        let decoded: Config = toml::from_str(toml_str).unwrap();
+        let toml_str =
+            if let Some(config_dir) = config_dir {
+                let bar_config_dir = config_dir.join("YetAnotherBar");
+                let _ = std::fs::create_dir_all(&bar_config_dir);
+                if let Ok(file) =
+                       std::fs::read_to_string(&bar_config_dir.join("config.toml"))
+                   {
+                    file
+                } else { default_config.into() }
+            } else { default_config.into() };
+        let decoded: Config = toml::from_str(&toml_str).unwrap();
         decoded
     }
 }
@@ -1053,7 +1078,6 @@ mod bar {
     use relm::{connect, Relm, Update, Widget};
     use relm_derive::Msg;
     use crate::ModuleComponent;
-    use crate::ModuleComponentTrait;
     pub struct ModelParam {
         pub bar_name: String,
         pub monitor_name: String,
@@ -1444,13 +1468,13 @@ mod alsa {
         }
         #[allow(dead_code, missing_docs)]
         pub struct Alsa {
-            gtkeventbox2: gtk::EventBox,
             gtk_label: gtk::Label,
+            gtkeventbox2: gtk::EventBox,
             model: Model,
         }
         pub struct __AlsaWidgets {
-            pub gtkeventbox2: gtk::EventBox,
             pub gtk_label: gtk::Label,
+            pub gtkeventbox2: gtk::EventBox,
         }
         impl Widget for Alsa {
             #[allow(unused_variables)]
@@ -1503,11 +1527,11 @@ mod alsa {
                                                           as
                                                           *mut _).downcast().unwrap()
                     };
-                gtk_label.set_widget_name("pulse");
                 gtk_label.set_text(&{
                                         let model = &__relm_model;
                                         model
                                     }.volume);
+                gtk_label.set_widget_name("pulse");
                 ::gtk::ContainerExt::add(&gtkeventbox2, &gtk_label);
                 ::gtk::WidgetExt::show(&gtk_label);
                 ::gtk::WidgetExt::show(&gtkeventbox2);
@@ -1639,8 +1663,8 @@ mod alsa {
             =
             __AlsaWidgets;
             fn get_widgets(&self) -> __AlsaWidgets {
-                __AlsaWidgets{gtkeventbox2: self.gtkeventbox2.clone(),
-                              gtk_label: self.gtk_label.clone(),}
+                __AlsaWidgets{gtk_label: self.gtk_label.clone(),
+                              gtkeventbox2: self.gtkeventbox2.clone(),}
             }
         }
         impl Alsa { }
@@ -2297,13 +2321,13 @@ mod mpris {
         }
         #[allow(dead_code, missing_docs)]
         pub struct Mpris {
-            gtkeventbox4: gtk::EventBox,
             gtk_label: gtk::Label,
+            gtkeventbox4: gtk::EventBox,
             model: Model,
         }
         pub struct __MprisWidgets {
-            pub gtkeventbox4: gtk::EventBox,
             pub gtk_label: gtk::Label,
+            pub gtkeventbox4: gtk::EventBox,
         }
         impl Widget for Mpris {
             #[allow(unused_variables)]
@@ -2441,8 +2465,8 @@ mod mpris {
             =
             __MprisWidgets;
             fn get_widgets(&self) -> __MprisWidgets {
-                __MprisWidgets{gtkeventbox4: self.gtkeventbox4.clone(),
-                               gtk_label: self.gtk_label.clone(),}
+                __MprisWidgets{gtk_label: self.gtk_label.clone(),
+                               gtkeventbox4: self.gtkeventbox4.clone(),}
             }
         }
         impl Mpris { }
@@ -2542,11 +2566,7 @@ pub enum ModuleComponent {
     Mpris(Component<crate::mpris::Mpris>),
     Cpu(Component<crate::cpu::Cpu>),
 }
-trait ModuleComponentTrait {
-    fn widget(&self)
-    -> gtk::Widget;
-}
-impl ModuleComponentTrait for ModuleComponent {
+impl ModuleComponent {
     fn widget(&self) -> gtk::Widget {
         match self {
             ModuleComponent::Clock(m) =>
@@ -2562,16 +2582,60 @@ impl ModuleComponentTrait for ModuleComponent {
         }
     }
 }
+use downcast_rs::{impl_downcast, Downcast};
+trait Base: Downcast { }
+impl dyn Base<> {
+    /// Returns true if the trait object wraps an object of type `__T`.
+    #[inline]
+    pub fn is<__T: Base<>>(&self) -> bool {
+        ::downcast_rs::Downcast::as_any(self).is::<__T>()
+    }
+    /// Returns a boxed object from a boxed trait object if the underlying object is of type
+    /// `__T`. Returns the original boxed trait if it isn't.
+    #[inline]
+    pub fn downcast<__T: Base<>>(self: ::std::boxed::Box<Self>)
+     ->
+         ::std::result::Result<::std::boxed::Box<__T>,
+                               ::std::boxed::Box<Self>> {
+        if self.is::<__T>() {
+            Ok(::downcast_rs::Downcast::into_any(self).downcast::<__T>().unwrap())
+        } else { Err(self) }
+    }
+    /// Returns an `Rc`-ed object from an `Rc`-ed trait object if the underlying object is of
+    /// type `__T`. Returns the original `Rc`-ed trait if it isn't.
+    #[inline]
+    pub fn downcast_rc<__T: Base<>>(self: ::std::rc::Rc<Self>)
+     -> ::std::result::Result<::std::rc::Rc<__T>, ::std::rc::Rc<Self>> {
+        if self.is::<__T>() {
+            Ok(::downcast_rs::Downcast::into_any_rc(self).downcast::<__T>().unwrap())
+        } else { Err(self) }
+    }
+    /// Returns a reference to the object within the trait object if it is of type `__T`, or
+    /// `None` if it isn't.
+    #[inline]
+    pub fn downcast_ref<__T: Base<>>(&self) -> ::std::option::Option<&__T> {
+        ::downcast_rs::Downcast::as_any(self).downcast_ref::<__T>()
+    }
+    /// Returns a mutable reference to the object within the trait object if it is of type
+    /// `__T`, or `None` if it isn't.
+    #[inline]
+    pub fn downcast_mut<__T: Base<>>(&mut self)
+     -> ::std::option::Option<&mut __T> {
+        ::downcast_rs::Downcast::as_any_mut(self).downcast_mut::<__T>()
+    }
+}
 macro_rules! module_get(($ e : expr, $ p : path) =>
                         (if let $ p (m) = $ e { Some (m) } else { None }))
-macro_rules! thread_run(($ run : path, $ module : path, $ monitor : expr) =>
-                        ($ run
-                         ($ monitor . iter () . flat_map
-                          (| m | m . modules_left . iter () . chain
-                           (m . modules_right . iter ())) . filter_map
-                          (| m | module_get ! (m, $ module)) . map
-                          (| m | m . stream () . to_owned ()) . collect ())
-                         ;))
+macro_rules! thread_run(($ run : path, $ module : path, $ bars : expr) =>
+                        ({
+                             let streams : Vec < _ > = $ bars . iter () .
+                             flat_map
+                             (| m | m . modules_left . iter () . chain
+                              (m . modules_right . iter ())) . filter_map
+                             (| m | module_get ! (m, $ module)) . map
+                             (| m | m . stream () . to_owned ()) . collect ()
+                             ; if streams . len () > 0 { $ run (streams) ; }
+                         }))
 fn main() {
     gtk::init().unwrap();
     {
@@ -2583,90 +2647,109 @@ fn main() {
                                                    &style_provider,
                                                    gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
     }
-    let config = config::get_config();
-    let config_bars = config.bars;
-    let mut monitors = Vec::new();
-    for config_bar in config_bars {
-        fn m(module: &config::Module, config_bar: &config::Bar,
-             vec: &mut Vec<ModuleComponent>) {
-            vec.push(match module {
-                         config::Module::Clock => {
-                             ModuleComponent::Clock(relm::init::<crate::clock::Clock>(()).unwrap())
-                         }
-                         config::Module::I3 =>
-                         ModuleComponent::I3(relm::init::<crate::i3::I3>(config_bar.monitor.clone()).unwrap()),
-                         config::Module::Alsa => {
-                             ModuleComponent::Alsa(relm::init::<crate::alsa::Alsa>(()).unwrap())
-                         }
-                         config::Module::Mpris => {
-                             ModuleComponent::Mpris(relm::init::<crate::mpris::Mpris>(()).unwrap())
-                         }
-                         config::Module::Cpu => {
-                             ModuleComponent::Cpu(relm::init::<crate::cpu::Cpu>(()).unwrap())
-                         }
-                     });
-        }
-        let mut modules_left = Vec::new();
-        for module in &config_bar.modules_left {
-            m(module, &config_bar, &mut modules_left);
-        }
-        let mut modules_right = Vec::new();
-        for module in &config_bar.modules_right {
-            m(module, &config_bar, &mut modules_right);
-        }
-        monitors.push(bar::ModelParam{bar_name: config_bar.name,
-                                      monitor_name:
-                                          config_bar.monitor.clone(),
-                                      x: config_bar.pos_x,
-                                      y: config_bar.pos_y,
-                                      modules_left,
-                                      modules_right,});
-    }
-    alsa::alsa_thread::run(monitors.iter().flat_map(|m|
-                                                        m.modules_left.iter().chain(m.modules_right.iter())).filter_map(|m|
-                                                                                                                            if let ModuleComponent::Alsa(m)
-                                                                                                                                   =
-                                                                                                                                   m
-                                                                                                                               {
-                                                                                                                                Some(m)
-                                                                                                                            } else {
-                                                                                                                                None
-                                                                                                                            }).map(|m|
-                                                                                                                                       m.stream().to_owned()).collect());
-    i3::i3_thread::run(monitors.iter().flat_map(|m|
-                                                    m.modules_left.iter().chain(m.modules_right.iter())).filter_map(|m|
-                                                                                                                        if let ModuleComponent::I3(m)
-                                                                                                                               =
-                                                                                                                               m
-                                                                                                                           {
-                                                                                                                            Some(m)
-                                                                                                                        } else {
-                                                                                                                            None
-                                                                                                                        }).map(|m|
-                                                                                                                                   m.stream().to_owned()).collect());
-    mpris::mpris_thread::run(monitors.iter().flat_map(|m|
-                                                          m.modules_left.iter().chain(m.modules_right.iter())).filter_map(|m|
-                                                                                                                              if let ModuleComponent::Mpris(m)
-                                                                                                                                     =
-                                                                                                                                     m
-                                                                                                                                 {
-                                                                                                                                  Some(m)
-                                                                                                                              } else {
-                                                                                                                                  None
-                                                                                                                              }).map(|m|
-                                                                                                                                         m.stream().to_owned()).collect());
-    cpu::cpu_thread::run(monitors.iter().flat_map(|m|
-                                                      m.modules_left.iter().chain(m.modules_right.iter())).filter_map(|m|
-                                                                                                                          if let ModuleComponent::Cpu(m)
-                                                                                                                                 =
-                                                                                                                                 m
-                                                                                                                             {
-                                                                                                                              Some(m)
-                                                                                                                          } else {
-                                                                                                                              None
-                                                                                                                          }).map(|m|
-                                                                                                                                     m.stream().to_owned()).collect());
-    let _bar: Vec<relm::Component<crate::bar::Bar>> =
-        monitors.into_iter().map(|m| relm::init::<Bar>(m).unwrap()).collect();
+    let bars =
+        {
+            let config = config::get_config();
+            let config_bars = config.bars;
+            let mut bars = Vec::new();
+            for config_bar in config_bars {
+                fn m(module: &config::Module, config_bar: &config::Bar,
+                     vec: &mut Vec<ModuleComponent>) {
+                    vec.push(match module {
+                                 config::Module::Clock => {
+                                     ModuleComponent::Clock(relm::init::<crate::clock::Clock>(()).unwrap())
+                                 }
+                                 config::Module::I3 =>
+                                 ModuleComponent::I3(relm::init::<crate::i3::I3>(config_bar.monitor.clone()).unwrap()),
+                                 config::Module::Alsa => {
+                                     ModuleComponent::Alsa(relm::init::<crate::alsa::Alsa>(()).unwrap())
+                                 }
+                                 config::Module::Mpris => {
+                                     ModuleComponent::Mpris(relm::init::<crate::mpris::Mpris>(()).unwrap())
+                                 }
+                                 config::Module::Cpu => {
+                                     ModuleComponent::Cpu(relm::init::<crate::cpu::Cpu>(()).unwrap())
+                                 }
+                             });
+                }
+                let mut modules_left = Vec::new();
+                for module in &config_bar.modules_left {
+                    m(module, &config_bar, &mut modules_left);
+                }
+                let mut modules_right = Vec::new();
+                for module in &config_bar.modules_right {
+                    m(module, &config_bar, &mut modules_right);
+                }
+                bars.push(bar::ModelParam{bar_name: config_bar.name,
+                                          monitor_name:
+                                              config_bar.monitor.clone(),
+                                          x: config_bar.pos_x,
+                                          y: config_bar.pos_y,
+                                          modules_left,
+                                          modules_right,});
+            }
+            bars
+        };
+    {
+        let streams: Vec<_> =
+            bars.iter().flat_map(|m|
+                                     m.modules_left.iter().chain(m.modules_right.iter())).filter_map(|m|
+                                                                                                         if let ModuleComponent::Alsa(m)
+                                                                                                                =
+                                                                                                                m
+                                                                                                            {
+                                                                                                             Some(m)
+                                                                                                         } else {
+                                                                                                             None
+                                                                                                         }).map(|m|
+                                                                                                                    m.stream().to_owned()).collect();
+        if streams.len() > 0 { alsa::alsa_thread::run(streams); }
+    };
+    {
+        let streams: Vec<_> =
+            bars.iter().flat_map(|m|
+                                     m.modules_left.iter().chain(m.modules_right.iter())).filter_map(|m|
+                                                                                                         if let ModuleComponent::I3(m)
+                                                                                                                =
+                                                                                                                m
+                                                                                                            {
+                                                                                                             Some(m)
+                                                                                                         } else {
+                                                                                                             None
+                                                                                                         }).map(|m|
+                                                                                                                    m.stream().to_owned()).collect();
+        if streams.len() > 0 { i3::i3_thread::run(streams); }
+    };
+    {
+        let streams: Vec<_> =
+            bars.iter().flat_map(|m|
+                                     m.modules_left.iter().chain(m.modules_right.iter())).filter_map(|m|
+                                                                                                         if let ModuleComponent::Mpris(m)
+                                                                                                                =
+                                                                                                                m
+                                                                                                            {
+                                                                                                             Some(m)
+                                                                                                         } else {
+                                                                                                             None
+                                                                                                         }).map(|m|
+                                                                                                                    m.stream().to_owned()).collect();
+        if streams.len() > 0 { mpris::mpris_thread::run(streams); }
+    };
+    {
+        let streams: Vec<_> =
+            bars.iter().flat_map(|m|
+                                     m.modules_left.iter().chain(m.modules_right.iter())).filter_map(|m|
+                                                                                                         if let ModuleComponent::Cpu(m)
+                                                                                                                =
+                                                                                                                m
+                                                                                                            {
+                                                                                                             Some(m)
+                                                                                                         } else {
+                                                                                                             None
+                                                                                                         }).map(|m|
+                                                                                                                    m.stream().to_owned()).collect();
+        if streams.len() > 0 { cpu::cpu_thread::run(streams); }
+    };
+    bars.into_iter().for_each(|m| { let _ = relm::init::<Bar>(m).unwrap(); });
     gtk::main();
 }

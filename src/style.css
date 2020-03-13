@@ -1,15 +1,13 @@
 * {
-  /* all: unset; */
   border: none;
   border-radius: 0;
-  /* font-family: Roboto, Helvetica, Arial, sans-serif; */
   font-size: 13px;
   font-weight: 600;
   min-height: 0;
 }
 
 #clock,
-#pulse,
+#alsa,
 #mpris
 {
   font-size: 15px;
@@ -22,14 +20,14 @@
 #clock {
   background-color: #ff0066;
 }
-#pulse {
+#alsa {
   background-color: #2ecc71;
   color: black;
   font-weight: 500;
   transition-property: background-color, color;
   transition-duration: 0.5s;
 }
-#pulse.muted{
+#alsa.muted{
   background-color: #90b1b1;
 }
 
@@ -43,8 +41,6 @@
   background-color: #25a75b;
 }
 #cpu{
-  /* background-color: #ff0066; */
-  /* color: #a80043; */
   margin: 5px 4px;
   color: #424242;
 }
@@ -61,7 +57,6 @@ window,#main_box{
 }
 #i3 button {
   background: unset;
-  /* padding: 5px 20px; */
   padding: 0 15px;
   background-color: transparent;
   color: #ffffff;
@@ -78,6 +73,6 @@ window,#main_box{
   box-shadow: inherit;
   border-bottom: 4px solid #ffffff;
 }
-#i3 button:focus {
-  background-color: rgb(32, 32, 32);
+#i3 button:active {
+  background: rgb(40,40,40);
 }

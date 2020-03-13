@@ -82,7 +82,7 @@ impl Widget for Alsa {
             #[name="gtk_label"]
             gtk::Label {
                 text: &self.model.volume,
-                widget_name: "pulse",
+                widget_name: "alsa",
             },
         }
     }
