@@ -44,13 +44,18 @@ macro_rules! module_get(
 );
 macro_rules! thread_run(
     ($run:path, $module:path, $bars: expr) => (
-        $run($bars
+        {
+            let streams : Vec<_> = $bars
             .iter()
             .flat_map(|m| m.modules_left.iter().chain(m.modules_right.iter()))
             .filter_map(|m| module_get!(m, $module))
             .map(|m| m.stream().to_owned())
-            .collect()
-        );
+            .collect();
+
+            if streams.len() > 0{
+                $run(streams);
+            }
+        }
     )
 );
 
