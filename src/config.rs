@@ -42,8 +42,7 @@ pub fn get_config() -> Config {
 
     let toml_str = if let Some(config_dir) = config_dir {
         let bar_config_dir = config_dir.join("YetAnotherBar");
-        std::fs::create_dir_all(&bar_config_dir)
-            .expect("Could Not Create Config Folder In .config/YetAnotherBar");
+        let _ = std::fs::create_dir_all(&bar_config_dir);
         if let Ok(file) = std::fs::read_to_string(&bar_config_dir.join("config.toml")) {
             file
         } else {
