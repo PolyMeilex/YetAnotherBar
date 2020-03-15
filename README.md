@@ -4,6 +4,9 @@
 The answer is really simple... we don't,  
 but I really like the idea of native status bar with CSS support so here you go anyway
 
+# Installation
+On Arch linux you can install it from AUR [yetanotherbar-git](https://aur.archlinux.org/packages/yetanotherbar-git)
+
 # Example Config
 `` ~/.config/YetAnotherBar/config.toml``
 ```toml
