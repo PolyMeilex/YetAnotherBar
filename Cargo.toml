@@ -1,5 +1,5 @@
 [package]
-name = "yet-another-bar"
+name = "yetanotherbar"
 version = "0.1.0"
 authors = ["Poly <bartek.marynczak@op.pl>"]
 edition = "2018"
