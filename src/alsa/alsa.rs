@@ -27,7 +27,7 @@ impl Widget for Alsa {
     fn update(&mut self, event: Msg) {
         match event {
             Msg::Update(volume, state) => {
-                let p = (volume as f32 * 100.0 / 0x10000 as f32).round();
+                let p = (volume as f32 * 100.0 / 65536_f32).round();
                 self.model.volume = p.to_string() + "%";
 
                 if state == 0 {

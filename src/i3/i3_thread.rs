@@ -76,7 +76,7 @@ pub fn run(streams: Vec<relm::EventStream<super::i3::Msg>>) {
 
         for event in listener.listen() {
             use i3ipc::event::Event;
-            let event = if let Some(event) = event.ok() {
+            let event = if let Ok(event) = event {
                 event
             } else {
                 break;

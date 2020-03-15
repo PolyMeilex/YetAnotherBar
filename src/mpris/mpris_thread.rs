@@ -8,11 +8,10 @@ pub fn run(streams: Vec<relm::EventStream<super::mpris::Msg>>) {
 
     for s in streams.iter() {
         let tx = tx.clone();
-        s.observe(move |msg| match msg {
-            super::mpris::Msg::PausePlay => {
-                let _ = tx.send(MpscEvent::PausePlay);
+        s.observe(move |msg| {
+            if let super::mpris::Msg::PausePlay = msg {
+                tx.send(MpscEvent::PausePlay).expect("mpris_thread sennder");
             }
-            _ => {}
         });
     }
 
@@ -38,7 +37,7 @@ pub fn run(streams: Vec<relm::EventStream<super::mpris::Msg>>) {
                 }
             }
 
-            if let Some(event) = rx.try_recv().ok() {
+            if let Ok(event) = rx.try_recv() {
                 match event {
                     MpscEvent::PausePlay => {
                         if let Some(active_player) = &active_player {
