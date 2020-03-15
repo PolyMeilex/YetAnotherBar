@@ -31,11 +31,11 @@ pub struct Bar {
 
 impl Widget for Bar {
     fn init_view(&mut self) {
-        for module in self.model.params.modules_left.iter() {
+        for module in self.model.params.modules_left.iter().rev() {
             self.gtk_box.pack_start(&module.widget(), false, false, 0);
         }
 
-        for module in self.model.params.modules_right.iter() {
+        for module in self.model.params.modules_right.iter().rev() {
             self.gtk_box.pack_end(&module.widget(), false, false, 0);
         }
 
