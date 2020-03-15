@@ -28,6 +28,7 @@ pos_y = 1000
 modules_left = ["I3"]
 modules_right = ["Cpu","Mpris","Alsa","Clock"]
 ```
-`` ~/.config/YetAnotherBar/style.css`` [css](https://github.com/PolyMeilex/YetAnotherBar/blob/master/src/style.css)
+`` ~/.config/YetAnotherBar/style.css`` [css](https://github.com/PolyMeilex/YetAnotherBar/blob/master/src/style.css)  
+For more info about CSS selectors visit [wiki](https://github.com/PolyMeilex/YetAnotherBar/wiki)
 ## Result
 ![img](https://i.imgur.com/GJ71oye.png)
