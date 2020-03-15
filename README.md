@@ -1,5 +1,4 @@
 ![YetAnotherBar Baner](https://i.imgur.com/jqUkGuA.png)
-YetAnotherBar is simple gtk based statusbar for i3 with support for CSS
 
 ## Why do we need yet another status bar?
 The answer is really simple... we don't,  
