@@ -4,6 +4,9 @@
 The answer is really simple... we don't,  
 but I really like the idea of native status bar with CSS support so here you go anyway
 
+# Installation
+On Arch linux you can install it from AUR [yetanotherbar-git](https://aur.archlinux.org/packages/yetanotherbar-git)
+
 # Example Config
 `` ~/.config/YetAnotherBar/config.toml``
 ```toml
@@ -25,6 +28,7 @@ pos_y = 1000
 modules_left = ["I3"]
 modules_right = ["Cpu","Mpris","Alsa","Clock"]
 ```
-`` ~/.config/YetAnotherBar/style.css`` [css](https://github.com/PolyMeilex/YetAnotherBar/blob/master/src/style.css)
+`` ~/.config/YetAnotherBar/style.css`` [css](https://github.com/PolyMeilex/YetAnotherBar/blob/master/src/style.css)  
+For more info about CSS selectors visit [wiki](https://github.com/PolyMeilex/YetAnotherBar/wiki)
 ## Result
 ![img](https://i.imgur.com/GJ71oye.png)
