@@ -10,7 +10,7 @@ pub struct Model {
 
 #[derive(Msg, Clone)]
 pub enum Msg {
-    Update(i64, i32),
+    Update(f64, i32),
     Mute,
     VolumeChange(gdk::ScrollDirection),
 }
@@ -20,14 +20,15 @@ impl Widget for Alsa {
     fn model() -> Model {
         Model {
             alsa_mixer: alsa::Mixer::new("default", true).unwrap(),
-            volume: "0".into(),
+            volume: "0%".into(),
         }
     }
 
     fn update(&mut self, event: Msg) {
         match event {
             Msg::Update(volume, state) => {
-                let p = (volume as f32 * 100.0 / 65536_f32).round();
+                let p = volume.round();
+
                 self.model.volume = p.to_string() + "%";
 
                 if state == 0 {
@@ -62,10 +63,15 @@ impl Widget for Alsa {
                     gdk::ScrollDirection::Down => -1,
                     _ => return,
                 };
-                let add = (5.0 * 655.35) as i64 * mult;
+                let (min, max) = master.get_playback_volume_range();
+                let volume_devider = max as f64 - min as f64;
+
+                let add = (5.0 * volume_devider / 100.0) as i64 * mult;
+
                 let volume = master
                     .get_playback_volume(alsa::mixer::SelemChannelId::FrontLeft)
                     .unwrap();
+
                 let _ = master.set_playback_volume_all(volume + add);
             }
         }

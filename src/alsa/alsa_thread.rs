@@ -11,11 +11,15 @@ pub fn run(streams: Vec<relm::EventStream<super::alsa::Msg>>) {
                 .unwrap();
             let volume = master
                 .get_playback_volume(::alsa::mixer::SelemChannelId::FrontLeft)
-                .unwrap();
+                .unwrap() as f64;
+
+            let (min, max) = master.get_playback_volume_range();
+            let volume_devider = max as f64 - min as f64;
+
             let state = master
                 .get_playback_switch(::alsa::mixer::SelemChannelId::FrontLeft)
                 .unwrap();
-            super::alsa::Msg::Update(volume, state)
+            super::alsa::Msg::Update((volume / volume_devider) * 100.0, state)
         }
 
         let alsa_mixer = ::alsa::Mixer::new("default", true).unwrap();
