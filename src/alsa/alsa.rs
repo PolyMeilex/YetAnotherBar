@@ -68,16 +68,20 @@ impl Widget for Alsa {
 
                 let add = (5.0 * volume_devider / 100.0) as i64 * mult;
 
-                let volume = master
+                let mut volume = master
                     .get_playback_volume(alsa::mixer::SelemChannelId::FrontLeft)
                     .unwrap();
 
-                let _ = master.set_playback_volume_all(volume + add);
+                if volume + add > max {
+                    volume = max;
+                } else {
+                    volume += add;
+                }
+
+                let _ = master.set_playback_volume_all(volume);
             }
         }
     }
-    // fn subscriptions(&mut self, relm: &Relm<Self>) {}
-    // fn init_view(&mut self) {}
 
     view! {
         gtk::EventBox{
