@@ -2,6 +2,29 @@ enum MpscEvent {
     PausePlay,
 }
 
+fn find_active(finder: &mpris::PlayerFinder) -> Option<mpris::Player> {
+    if let Ok(mut list) = finder.find_all() {
+        let mut active_list: Vec<mpris::Player> = list
+            .into_iter()
+            .filter(|p| {
+                if let Ok(mpris::PlaybackStatus::Playing) = p.get_playback_status() {
+                    true
+                } else {
+                    false
+                }
+            })
+            .collect();
+
+        if active_list.len() > 0 {
+            Some(active_list.remove(0))
+        } else {
+            finder.find_active().ok()
+        }
+    } else {
+        None
+    }
+}
+
 pub fn run(streams: Vec<relm::EventStream<super::mpris::Msg>>) {
     use std::sync::mpsc;
     let (tx, rx) = mpsc::channel();
@@ -22,11 +45,6 @@ pub fn run(streams: Vec<relm::EventStream<super::mpris::Msg>>) {
     });
 
     std::thread::spawn(move || {
-        // Init Event
-        sender
-            .send(super::mpris::Msg::PlayersList("None".into()))
-            .expect("mpris_thread send");
-
         let finder = mpris::PlayerFinder::new().expect("Could not connect to D-Bus");
         let mut active_player: Option<mpris::Player> = finder.find_active().ok();
 
@@ -52,22 +70,32 @@ pub fn run(streams: Vec<relm::EventStream<super::mpris::Msg>>) {
 
                 if let Ok(status) = status {
                     sender
-                        .send(super::mpris::Msg::Status(status))
+                        .send(super::mpris::Msg::Status(Some(status)))
+                        .expect("mpris_thread send");
+                    sender
+                        .send(super::mpris::Msg::Player(Some(
+                            player.identity().to_string(),
+                        )))
+                        .expect("mpris_thread send");
+                    sender
+                        .send(super::mpris::Msg::UpdateLabel)
                         .expect("mpris_thread send");
 
-                    sender
-                        .send(super::mpris::Msg::PlayersList(
-                            player.identity().to_string()
-                                + &" : ".to_string()
-                                + &format!("{:?}", status),
-                        ))
-                        .expect("mpris_thread send");
+                    if let mpris::PlaybackStatus::Paused | mpris::PlaybackStatus::Stopped = status {
+                        active_player = find_active(&finder);
+                    }
                 } else {
-                    active_player = finder.find_active().ok();
+                    active_player = find_active(&finder);
                 };
             } else {
                 sender
-                    .send(super::mpris::Msg::PlayersList("None".into()))
+                    .send(super::mpris::Msg::Status(None))
+                    .expect("mpris_thread send");
+                sender
+                    .send(super::mpris::Msg::Player(None))
+                    .expect("mpris_thread send");
+                sender
+                    .send(super::mpris::Msg::UpdateLabel)
                     .expect("mpris_thread send");
 
                 active_player = finder.find_active().ok();

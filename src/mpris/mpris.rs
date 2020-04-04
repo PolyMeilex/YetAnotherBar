@@ -4,31 +4,47 @@ use relm::Widget;
 use relm_derive::{widget, Msg};
 
 pub struct Model {
-    volume: String,
+    text: String,
+    player: Option<String>,
+    status: Option<mpris::PlaybackStatus>,
 }
 
 #[derive(Msg, Clone)]
 pub enum Msg {
-    PlayersList(String),
+    UpdateLabel,
+    Player(Option<String>),
     PausePlay,
-    Status(mpris::PlaybackStatus),
+    Status(Option<mpris::PlaybackStatus>),
 }
 
 #[widget]
 impl Widget for Mpris {
     fn model() -> Model {
-        Model { volume: "0".into() }
+        Model {
+            text: "None".into(),
+            player: None,
+            status: None,
+        }
     }
 
     fn update(&mut self, event: Msg) {
         match event {
-            Msg::PlayersList(s) => self.model.volume = s,
+            Msg::UpdateLabel => {
+                if let (Some(player), Some(status)) = (&self.model.player, &self.model.status) {
+                    self.model.text = format!("{} : {:?}", player, status);
+                } else {
+                    self.model.text = "None".into();
+                }
+            }
+            Msg::Player(s) => self.model.player = s,
             Msg::PausePlay => {}
             Msg::Status(status) => {
+                self.model.status = status;
+
                 let ctx = self.gtk_label.get_style_context();
 
                 match status {
-                    mpris::PlaybackStatus::Playing => {
+                    Some(mpris::PlaybackStatus::Playing) => {
                         ctx.add_class("playing");
                     }
                     _ => {
@@ -45,7 +61,7 @@ impl Widget for Mpris {
 
             #[name="gtk_label"]
             gtk::Label {
-                text: &self.model.volume,
+                text: &self.model.text,
                 widget_name: "mpris",
             },
         }
