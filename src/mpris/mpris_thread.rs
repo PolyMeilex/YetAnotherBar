@@ -3,7 +3,7 @@ enum MpscEvent {
 }
 
 fn find_active(finder: &mpris::PlayerFinder) -> Option<mpris::Player> {
-    if let Ok(mut list) = finder.find_all() {
+    if let Ok(list) = finder.find_all() {
         let mut active_list: Vec<mpris::Player> = list
             .into_iter()
             .filter(|p| {
