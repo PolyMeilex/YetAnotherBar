@@ -61,6 +61,7 @@ window,#main_box{
   background-color: transparent;
   color: #ffffff;
   border-bottom: 4px solid rgba(255, 255, 255, 0.2);
+  box-shadow: unset;
 }
 #i3 button.focused {
   border-bottom: 4px solid rgba(255, 255, 255, 0.8);
