@@ -53,6 +53,8 @@ impl Widget for Alsa {
                 }
             }
             Msg::VolumeChange(sd) => {
+                let _ = self.model.alsa_mixer.handle_events();
+
                 let master = self
                     .model
                     .alsa_mixer
