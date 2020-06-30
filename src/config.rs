@@ -1,8 +1,8 @@
 use serde_derive::Deserialize;
+use std::collections::BTreeMap;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct Bar {
-    pub name: String,
     pub monitor: String,
     pub pos_x: i32,
     pub pos_y: i32,
@@ -20,9 +20,21 @@ pub enum Module {
     // Custom(String),
 }
 
+// #[derive(Clone, Debug, Deserialize)]
+// pub struct DetailedDep {
+//     name: String,
+// }
+
+// #[derive(Clone, Debug, Deserialize)]
+// #[serde(untagged)]
+// pub enum Dep {
+//     Simple(String),
+//     Detailed(DetailedDep),
+// }
+
 #[derive(Clone, Debug, Deserialize)]
 pub struct Config {
-    pub bars: Vec<Bar>,
+    pub bars: BTreeMap<String, Bar>,
 }
 
 use std::path::PathBuf;

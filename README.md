@@ -10,21 +10,19 @@ On Arch linux you can install it from AUR [yetanotherbar-git](https://aur.archli
 # Example Config
 `` ~/.config/YetAnotherBar/config.toml``
 ```toml
-[[bars]]
-name = "bar-left"
+[bars.bar-left]
 monitor = "DP-1"
 pos_x = 0
 pos_y = 1000
-
+ 
 modules_left = ["I3"]
 modules_right = ["Cpu","Mpris","Alsa","Clock"]
-
-[[bars]]
-name = "bar-right"
+ 
+[bars.bar-right]
 monitor = "HDMI-0"
 pos_x = 1920
 pos_y = 1000
-
+ 
 modules_left = ["I3"]
 modules_right = ["Cpu","Mpris","Alsa","Clock"]
 ```

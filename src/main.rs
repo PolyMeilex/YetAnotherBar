@@ -95,7 +95,7 @@ fn main() {
                         config::Module::I3 => {
                             i3 = true;
                             ModuleComponent::I3(
-                                relm::init::<crate::i3::I3>(config_bar.monitor.clone()).unwrap(),
+                                relm::init::<crate::i3::I3>(config_bar.1.monitor.clone()).unwrap(),
                             )
                         }
                         config::Module::Alsa => {
@@ -116,21 +116,21 @@ fn main() {
 
             let mut modules_left = Vec::new();
 
-            for module in &config_bar.modules_left {
+            for module in &config_bar.1.modules_left {
                 match_module!(module, modules_left);
             }
 
             let mut modules_right = Vec::new();
 
-            for module in &config_bar.modules_right {
+            for module in &config_bar.1.modules_right {
                 match_module!(module, modules_right);
             }
 
             bars.push(bar::ModelParam {
-                bar_name: config_bar.name,
-                monitor_name: config_bar.monitor.clone(),
-                x: config_bar.pos_x,
-                y: config_bar.pos_y,
+                bar_name: config_bar.0,
+                monitor_name: config_bar.1.monitor.clone(),
+                x: config_bar.1.pos_x,
+                y: config_bar.1.pos_y,
                 modules_left,
                 modules_right,
             });
