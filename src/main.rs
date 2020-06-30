@@ -75,6 +75,10 @@ fn main() {
         );
     }
 
+    let mut i3 = false;
+    let mut alsa = false;
+    let mut mpris = false;
+    let mut cpu = false;
     // Init Bars From Config
     let bars = {
         let config_bars = config.bars;
@@ -82,40 +86,44 @@ fn main() {
         let mut bars = Vec::new();
 
         for config_bar in config_bars {
-            fn m(
-                module: &config::Module,
-                config_bar: &config::Bar,
-                vec: &mut Vec<ModuleComponent>,
-            ) {
-                vec.push(match module {
-                    config::Module::Clock => {
-                        ModuleComponent::Clock(relm::init::<crate::clock::Clock>(()).unwrap())
-                    }
-                    config::Module::I3 => ModuleComponent::I3(
-                        relm::init::<crate::i3::I3>(config_bar.monitor.clone()).unwrap(),
-                    ),
-                    config::Module::Alsa => {
-                        ModuleComponent::Alsa(relm::init::<crate::alsa::Alsa>(()).unwrap())
-                    }
-                    config::Module::Mpris => {
-                        ModuleComponent::Mpris(relm::init::<crate::mpris::Mpris>(()).unwrap())
-                    }
-                    config::Module::Cpu => {
-                        ModuleComponent::Cpu(relm::init::<crate::cpu::Cpu>(()).unwrap())
-                    }
-                });
+            macro_rules! match_module {
+                ($module:expr, $vec:expr) => {
+                    $vec.push(match $module {
+                        config::Module::Clock => {
+                            ModuleComponent::Clock(relm::init::<crate::clock::Clock>(()).unwrap())
+                        }
+                        config::Module::I3 => {
+                            i3 = true;
+                            ModuleComponent::I3(
+                                relm::init::<crate::i3::I3>(config_bar.monitor.clone()).unwrap(),
+                            )
+                        }
+                        config::Module::Alsa => {
+                            alsa = true;
+                            ModuleComponent::Alsa(relm::init::<crate::alsa::Alsa>(()).unwrap())
+                        }
+                        config::Module::Mpris => {
+                            mpris = true;
+                            ModuleComponent::Mpris(relm::init::<crate::mpris::Mpris>(()).unwrap())
+                        }
+                        config::Module::Cpu => {
+                            cpu = true;
+                            ModuleComponent::Cpu(relm::init::<crate::cpu::Cpu>(()).unwrap())
+                        }
+                    });
+                };
             }
 
             let mut modules_left = Vec::new();
 
             for module in &config_bar.modules_left {
-                m(module, &config_bar, &mut modules_left);
+                match_module!(module, modules_left);
             }
 
             let mut modules_right = Vec::new();
 
             for module in &config_bar.modules_right {
-                m(module, &config_bar, &mut modules_right);
+                match_module!(module, modules_right);
             }
 
             bars.push(bar::ModelParam {
@@ -131,14 +139,22 @@ fn main() {
         bars
     };
 
-    // Alsa Thread
-    thread_run!(alsa::alsa_thread::run, ModuleComponent::Alsa, bars);
     // I3 Thread
-    thread_run!(i3::i3_thread::run, ModuleComponent::I3, bars);
+    if i3 {
+        thread_run!(i3::i3_thread::run, ModuleComponent::I3, bars);
+    }
+    // Alsa Thread
+    if alsa {
+        thread_run!(alsa::alsa_thread::run, ModuleComponent::Alsa, bars);
+    }
     // Mpris Thread
-    thread_run!(mpris::mpris_thread::run, ModuleComponent::Mpris, bars);
+    if mpris {
+        thread_run!(mpris::mpris_thread::run, ModuleComponent::Mpris, bars);
+    }
     // Cpu Thread
-    thread_run!(cpu::cpu_thread::run, ModuleComponent::Cpu, bars);
+    if cpu {
+        thread_run!(cpu::cpu_thread::run, ModuleComponent::Cpu, bars);
+    }
 
     bars.into_iter().for_each(|m| {
         let _ = relm::init::<Bar>(m).unwrap();
