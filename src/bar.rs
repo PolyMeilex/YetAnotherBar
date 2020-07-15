@@ -1,10 +1,11 @@
 use gtk::prelude::*;
-use gtk::{Inhibit, Window, WindowType};
+use gtk::{ApplicationWindow, Inhibit, WindowType};
 use relm::{connect, Relm, Update, Widget};
 use relm_derive::Msg;
 
 use crate::ModuleComponent;
 
+#[derive(Clone)]
 pub struct ModelParam {
     pub bar_name: String,
     pub monitor_name: String,
@@ -16,6 +17,7 @@ pub struct ModelParam {
 
 pub struct Model {
     params: ModelParam,
+    app: gtk::Application,
 }
 #[derive(Msg)]
 pub enum Msg {
@@ -24,7 +26,7 @@ pub enum Msg {
 }
 
 pub struct Bar {
-    gtk_window: gtk::Window,
+    gtk_window: ApplicationWindow,
     gtk_box: gtk::Box,
     model: Model,
 }
@@ -42,7 +44,8 @@ impl Widget for Bar {
         self.gtk_window.show_all();
     }
     fn view(relm: &::relm::Relm<Self>, model: Self::Model) -> Self {
-        let gtk_window: gtk::Window = gtk::WindowBuilder::new()
+        let gtk_window: ApplicationWindow = gtk::ApplicationWindowBuilder::new()
+            .application(&model.app)
             .type_(WindowType::Toplevel)
             .name(&model.params.bar_name)
             .type_hint(gdk::WindowTypeHint::Dock)
@@ -80,7 +83,7 @@ impl Widget for Bar {
             model,
         }
     }
-    type Root = Window;
+    type Root = ApplicationWindow;
     fn root(&self) -> Self::Root {
         self.gtk_window.clone()
     }
@@ -89,20 +92,23 @@ impl Widget for Bar {
 impl Update for Bar {
     type Msg = Msg;
     type Model = Model;
-    type ModelParam = ModelParam;
+    type ModelParam = (ModelParam, gtk::Application);
     fn update(&mut self, event: Msg) {
         match event {
             Msg::Quit => gtk::main_quit(),
             Msg::SetVisual => Self::set_visual(&self.gtk_window, None),
         }
     }
-    fn model(_: &Relm<Self>, params: ModelParam) -> Model {
-        Model { params }
+    fn model(_: &Relm<Self>, params: Self::ModelParam) -> Model {
+        Model {
+            params: params.0,
+            app: params.1,
+        }
     }
 }
 
 impl Bar {
-    fn set_visual(window: &Window, _screen: Option<&gdk::Screen>) {
+    fn set_visual(window: &ApplicationWindow, _screen: Option<&gdk::Screen>) {
         if let Some(screen) = window.get_screen() {
             if let Some(ref visual) = screen.get_rgba_visual() {
                 window.set_visual(Some(visual));

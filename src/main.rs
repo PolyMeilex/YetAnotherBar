@@ -1,5 +1,7 @@
+use gio::prelude::*;
 use gtk::prelude::*;
-use relm::Component;
+
+use relm::{Component, Widget};
 
 mod config;
 
@@ -13,6 +15,7 @@ mod mpris;
 
 use bar::Bar;
 
+#[derive(Clone)]
 pub enum ModuleComponent {
     Clock(Component<crate::clock::Clock>),
     I3(Component<crate::i3::I3>),
@@ -60,7 +63,11 @@ macro_rules! thread_run(
 );
 
 fn main() {
-    gtk::init().unwrap();
+    let app = gtk::Application::new(
+        Some("io.github.polymeilex.yetanotherbar"),
+        Default::default(),
+    )
+    .expect("App Init Failed");
 
     let (config, stylesheet) = config::get_config();
 
@@ -161,9 +168,23 @@ fn main() {
         thread_run!(cpu::cpu_thread::run, ModuleComponent::Cpu, bars);
     }
 
-    bars.into_iter().for_each(|m| {
-        let _ = relm::init::<Bar>(m).unwrap();
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    let running = Rc::new(RefCell::new(false));
+
+    let r = running.clone();
+    app.connect_activate(move |app| {
+        let running = *r.borrow();
+
+        if !running {
+            bars.iter().for_each(|m| {
+                let _ = relm::init::<Bar>((m.clone(), app.clone())).unwrap();
+            });
+
+            r.replace(true);
+        }
     });
 
-    gtk::main();
+    app.run(&std::env::args().collect::<Vec<_>>());
 }
