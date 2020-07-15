@@ -22,20 +22,13 @@ fn get_workspaces_event(i3_conn: &mut i3ipc::I3Connection) -> super::i3::Msg {
         .workspaces;
 
     let workspaces: Vec<I3Workspace> = workspaces
-        .iter()
-        .map(|ws| {
-            let num = ws.num;
-            let name = ws.name.clone();
-            let focused = ws.focused;
-            let urgent = ws.urgent;
-            let output = ws.output.clone();
-            I3Workspace {
-                num,
-                name,
-                focused,
-                urgent,
-                output,
-            }
+        .into_iter()
+        .map(|ws| I3Workspace {
+            num: ws.num,
+            name: ws.name,
+            focused: ws.focused,
+            urgent: ws.urgent,
+            output: ws.output,
         })
         .collect();
 
