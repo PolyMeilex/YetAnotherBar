@@ -88,6 +88,8 @@ fn main() {
     let mut i3_thread = i3::i3_thread::I3Thread::new();
     let mut alsa_thread = alsa::alsa_thread::AlsaThread::new();
 
+    let mut cpu_thread = cpu::cpu_thread::CpuThread::new();
+
     // Init Bars From Config
     let bars = {
         let config_bars = config.bars;
@@ -102,29 +104,32 @@ fn main() {
                             ModuleComponent::Clock(relm::init::<crate::clock::Clock>(()).unwrap())
                         }
                         config::Module::I3 => {
-                            let i = relm::init::<crate::i3::I3>((
+                            let i3 = relm::init::<crate::i3::I3>((
                                 config_bar.1.monitor.clone(),
                                 i3_thread.sender().clone(),
                             ))
                             .unwrap();
-                            i3_thread.push_stream(i.stream().clone());
+                            i3_thread.push_stream(i3.stream().clone());
 
-                            ModuleComponent::I3(i)
+                            ModuleComponent::I3(i3)
                         }
                         config::Module::Alsa => {
-                            let a = relm::init::<crate::alsa::Alsa>(alsa_thread.sender().clone())
-                                .unwrap();
-                            alsa_thread.push_stream(a.stream().clone());
+                            let alsa =
+                                relm::init::<crate::alsa::Alsa>(alsa_thread.sender().clone())
+                                    .unwrap();
+                            alsa_thread.push_stream(alsa.stream().clone());
 
-                            ModuleComponent::Alsa(a)
+                            ModuleComponent::Alsa(alsa)
                         }
                         config::Module::Mpris => {
                             mpris = true;
                             ModuleComponent::Mpris(relm::init::<crate::mpris::Mpris>(()).unwrap())
                         }
                         config::Module::Cpu => {
-                            cpu = true;
-                            ModuleComponent::Cpu(relm::init::<crate::cpu::Cpu>(()).unwrap())
+                            let cpu = relm::init::<crate::cpu::Cpu>(()).unwrap();
+                            cpu_thread.push_stream(cpu.stream().clone());
+
+                            ModuleComponent::Cpu(cpu)
                         }
                     });
                 };
@@ -157,7 +162,6 @@ fn main() {
 
     // I3 Thread
     if i3_thread.should_run {
-        // thread_run!(i3::i3_thread::run, ModuleComponent::I3, bars);
         i3_thread.run();
     }
     // Alsa Thread
@@ -169,8 +173,8 @@ fn main() {
         thread_run!(mpris::mpris_thread::run, ModuleComponent::Mpris, bars);
     }
     // Cpu Thread
-    if cpu {
-        thread_run!(cpu::cpu_thread::run, ModuleComponent::Cpu, bars);
+    if cpu_thread.should_run {
+        cpu_thread.run();
     }
 
     use std::cell::RefCell;
