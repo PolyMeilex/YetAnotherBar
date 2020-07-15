@@ -44,6 +44,10 @@ impl ModuleComponent {
 }
 
 fn main() {
+    // After update from gtk 0.8.0 to 0.8.0 there is reason for init here for some reason
+    // It probably should be investigated
+    gtk::init().unwrap();
+
     let app = gtk::Application::new(
         Some("io.github.polymeilex.yetanotherbar"),
         Default::default(),

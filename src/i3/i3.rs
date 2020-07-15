@@ -39,14 +39,14 @@ impl Widget for I3 {
         match event {
             Msg::UpdateWorkspaces(workspaces) => {
                 for btn in self.model.gtk_buttons.iter() {
-                    btn.destroy();
+                    unsafe { btn.destroy() };
                 }
 
                 for ws in workspaces.iter() {
                     if ws.output != self.model.monitor_name {
                         continue;
                     }
-                    let btn = gtk::Button::new_with_label(&ws.name);
+                    let btn = gtk::Button::with_label(&ws.name);
 
                     if ws.focused {
                         btn.get_style_context().add_class("focused");
