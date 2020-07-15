@@ -18,7 +18,7 @@ pub struct I3Workspace {
 }
 
 #[derive(Debug)]
-pub enum I3SenderEvent {
+pub enum I3ActionEvent {
     RunCommand(String),
 }
 
@@ -44,15 +44,15 @@ fn get_workspaces_event(i3_conn: &mut i3ipc::I3Connection) -> super::i3::Msg {
 
 pub struct I3Thread {
     streams: Vec<relm::EventStream<super::i3::Msg>>,
-    tx: mpsc::Sender<I3SenderEvent>,
-    rx: mpsc::Receiver<I3SenderEvent>,
+    tx: mpsc::Sender<I3ActionEvent>,
+    rx: mpsc::Receiver<I3ActionEvent>,
 
     pub should_run: bool,
 }
 
 impl I3Thread {
     pub fn new() -> Self {
-        let (tx, rx) = mpsc::channel::<I3SenderEvent>();
+        let (tx, rx) = mpsc::channel::<I3ActionEvent>();
 
         Self {
             streams: Vec::new(),
@@ -61,7 +61,7 @@ impl I3Thread {
             should_run: false,
         }
     }
-    pub fn sender(&self) -> &mpsc::Sender<I3SenderEvent> {
+    pub fn sender(&self) -> &mpsc::Sender<I3ActionEvent> {
         &self.tx
     }
     pub fn push_stream(&mut self, stream: relm::EventStream<super::i3::Msg>) {
@@ -98,8 +98,8 @@ impl I3Thread {
             //     .expect("i3 sennder");
 
             enum ThreadEvent {
-                I3icp(i3ipc::event::Event),
-                SendEvent(I3SenderEvent),
+                I3icpEvent(i3ipc::event::Event),
+                ActionEvent(I3ActionEvent),
             }
             let local_sender = {
                 let sender = sender.clone();
@@ -107,14 +107,14 @@ impl I3Thread {
                     use i3ipc::event::Event;
 
                     let event = match event {
-                        ThreadEvent::I3icp(event) => match event {
+                        ThreadEvent::I3icpEvent(event) => match event {
                             Event::WorkspaceEvent { .. } => get_workspaces_event(&mut i3_conn),
                             Event::ModeEvent(info) => super::i3::Msg::UpdateMode(info.change),
                             _ => return (),
                         },
-                        ThreadEvent::SendEvent(event) => {
+                        ThreadEvent::ActionEvent(event) => {
                             match event {
-                                I3SenderEvent::RunCommand(c) => i3_conn.run_command(&c).unwrap(),
+                                I3ActionEvent::RunCommand(c) => i3_conn.run_command(&c).unwrap(),
                             };
                             return ();
                         }
@@ -141,7 +141,7 @@ impl I3Thread {
                         } else {
                             break;
                         };
-                        local_sender.send(ThreadEvent::I3icp(event)).unwrap();
+                        local_sender.send(ThreadEvent::I3icpEvent(event)).unwrap();
                     }
 
                     i3_is_running.swap(false, std::sync::atomic::Ordering::Relaxed);
@@ -150,7 +150,7 @@ impl I3Thread {
 
             while i3_is_running.load(std::sync::atomic::Ordering::Relaxed) {
                 if let Ok(e) = rx.try_recv() {
-                    local_sender.send(ThreadEvent::SendEvent(e)).unwrap();
+                    local_sender.send(ThreadEvent::ActionEvent(e)).unwrap();
                 }
             }
 

@@ -4,13 +4,13 @@ use relm_derive::{widget, Msg};
 use std::sync::mpsc;
 
 use super::i3_thread;
-use i3_thread::I3SenderEvent;
+use i3_thread::I3ActionEvent;
 
 pub struct Model {
     monitor_name: String,
     gtk_buttons: Vec<gtk::Button>,
     gtk_label: gtk::Label,
-    sender: mpsc::Sender<I3SenderEvent>,
+    sender: mpsc::Sender<I3ActionEvent>,
 }
 
 #[derive(Msg, Clone)]
@@ -25,7 +25,7 @@ impl Widget for I3 {
 
     fn model(
         _: &Relm<Self>,
-        (monitor_name, sender): (String, mpsc::Sender<I3SenderEvent>),
+        (monitor_name, sender): (String, mpsc::Sender<I3ActionEvent>),
     ) -> Model {
         Model {
             monitor_name,
@@ -60,7 +60,7 @@ impl Widget for I3 {
                     let sender = self.model.sender.clone();
                     btn.connect_clicked(move |_| {
                         sender
-                            .send(I3SenderEvent::RunCommand(format!("workspace {}", name)))
+                            .send(I3ActionEvent::RunCommand(format!("workspace {}", name)))
                             .unwrap();
                     });
 

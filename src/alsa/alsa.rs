@@ -4,11 +4,11 @@ use relm::{Relm, Widget};
 use relm_derive::{widget, Msg};
 use std::sync::mpsc;
 
-use super::alsa_thread::AlsaSenderEvent;
+use super::alsa_thread::AlsaActionEvent;
 
 pub struct Model {
     volume: String,
-    sender: mpsc::Sender<AlsaSenderEvent>,
+    sender: mpsc::Sender<AlsaActionEvent>,
 }
 
 #[derive(Msg, Clone)]
@@ -20,7 +20,7 @@ pub enum Msg {
 
 #[widget]
 impl Widget for Alsa {
-    fn model(_relm: &Relm<Self>, sender: mpsc::Sender<AlsaSenderEvent>) -> Model {
+    fn model(_relm: &Relm<Self>, sender: mpsc::Sender<AlsaActionEvent>) -> Model {
         Model {
             volume: "0%".into(),
             sender,
@@ -41,7 +41,7 @@ impl Widget for Alsa {
                 }
             }
             Msg::Mute => {
-                self.model.sender.send(AlsaSenderEvent::Mute).unwrap();
+                self.model.sender.send(AlsaActionEvent::Mute).unwrap();
             }
             Msg::VolumeChange(sd) => {
                 let mult = match sd {
@@ -51,7 +51,7 @@ impl Widget for Alsa {
                 };
                 self.model
                     .sender
-                    .send(AlsaSenderEvent::VolumeChange(5.0 * mult as f64))
+                    .send(AlsaActionEvent::VolumeChange(5.0 * mult as f64))
                     .unwrap();
             }
         }

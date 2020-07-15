@@ -1,22 +1,22 @@
 use std::sync::mpsc;
 
 #[derive(Debug)]
-pub enum AlsaSenderEvent {
+pub enum AlsaActionEvent {
     Mute,
     VolumeChange(f64),
 }
 
 pub struct AlsaThread {
     streams: Vec<relm::EventStream<super::alsa::Msg>>,
-    tx: mpsc::Sender<AlsaSenderEvent>,
-    rx: mpsc::Receiver<AlsaSenderEvent>,
+    tx: mpsc::Sender<AlsaActionEvent>,
+    rx: mpsc::Receiver<AlsaActionEvent>,
 
     pub should_run: bool,
 }
 
 impl AlsaThread {
     pub fn new() -> Self {
-        let (tx, rx) = mpsc::channel::<AlsaSenderEvent>();
+        let (tx, rx) = mpsc::channel::<AlsaActionEvent>();
 
         Self {
             streams: Vec::new(),
@@ -25,7 +25,7 @@ impl AlsaThread {
             should_run: false,
         }
     }
-    pub fn sender(&self) -> &mpsc::Sender<AlsaSenderEvent> {
+    pub fn sender(&self) -> &mpsc::Sender<AlsaActionEvent> {
         &self.tx
     }
     pub fn push_stream(&mut self, stream: relm::EventStream<super::alsa::Msg>) {
@@ -71,7 +71,7 @@ impl AlsaThread {
 
                 if let Ok(e) = rx.try_recv() {
                     match e {
-                        AlsaSenderEvent::Mute => {
+                        AlsaActionEvent::Mute => {
                             let state = master
                                 .get_playback_switch(alsa::mixer::SelemChannelId::FrontLeft)
                                 .unwrap();
@@ -83,7 +83,7 @@ impl AlsaThread {
 
                             sender.send(update_event(&master)).expect("alsa send");
                         }
-                        AlsaSenderEvent::VolumeChange(v) => {
+                        AlsaActionEvent::VolumeChange(v) => {
                             let (min, max) = master.get_playback_volume_range();
                             let volume_devider = max as f64 - min as f64;
 
