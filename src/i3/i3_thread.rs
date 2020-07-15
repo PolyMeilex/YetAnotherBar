@@ -152,6 +152,7 @@ impl I3Thread {
                 if let Ok(e) = rx.try_recv() {
                     local_sender.send(ThreadEvent::ActionEvent(e)).unwrap();
                 }
+                std::thread::sleep(std::time::Duration::from_millis(100));
             }
 
             // After I3 Crashed or restarted we wait 2s before trying to connect again
