@@ -7,7 +7,6 @@ use std::sync::mpsc;
 use super::alsa_thread::AlsaSenderEvent;
 
 pub struct Model {
-    alsa_mixer: alsa::Mixer,
     volume: String,
     sender: mpsc::Sender<AlsaSenderEvent>,
 }
@@ -23,7 +22,6 @@ pub enum Msg {
 impl Widget for Alsa {
     fn model(_relm: &Relm<Self>, sender: mpsc::Sender<AlsaSenderEvent>) -> Model {
         Model {
-            alsa_mixer: alsa::Mixer::new("default", true).unwrap(),
             volume: "0%".into(),
             sender,
         }
