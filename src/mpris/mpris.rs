@@ -1,12 +1,17 @@
 use gtk::prelude::*;
 use gtk::Inhibit;
-use relm::Widget;
+use relm::{Relm, Widget};
 use relm_derive::{widget, Msg};
+use std::sync::mpsc;
+
+use super::mpris_thread;
+use mpris_thread::MpscActionEvent;
 
 pub struct Model {
     text: String,
     player: Option<String>,
     status: Option<mpris::PlaybackStatus>,
+    sender: mpsc::Sender<MpscActionEvent>,
 }
 
 #[derive(Msg, Clone)]
@@ -19,11 +24,12 @@ pub enum Msg {
 
 #[widget]
 impl Widget for Mpris {
-    fn model() -> Model {
+    fn model(_: &Relm<Self>, sender: mpsc::Sender<MpscActionEvent>) -> Model {
         Model {
             text: "None".into(),
             player: None,
             status: None,
+            sender,
         }
     }
 
@@ -37,7 +43,9 @@ impl Widget for Mpris {
                 }
             }
             Msg::Player(s) => self.model.player = s,
-            Msg::PausePlay => {}
+            Msg::PausePlay => {
+                self.model.sender.send(MpscActionEvent::PausePlay).unwrap();
+            }
             Msg::Status(status) => {
                 self.model.status = status;
 

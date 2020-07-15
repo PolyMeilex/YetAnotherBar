@@ -3,15 +3,22 @@ use gtk::prelude::*;
 
 use relm::Component;
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 mod config;
 
 mod bar;
 mod clock;
 
 mod alsa;
+use crate::alsa::alsa_thread::AlsaThread;
 mod cpu;
+use crate::cpu::cpu_thread::CpuThread;
 mod i3;
+use crate::i3::i3_thread::I3Thread;
 mod mpris;
+use crate::mpris::mpris_thread::MprisThread;
 
 use bar::Bar;
 
@@ -36,32 +43,6 @@ impl ModuleComponent {
     }
 }
 
-macro_rules! module_get(
-    ($e:expr, $p:path) => (
-        if let $p(m) = $e {
-             Some(m)
-        }else{
-            None
-        }
-    )
-);
-macro_rules! thread_run(
-    ($run:path, $module:path, $bars: expr) => (
-        {
-            let streams : Vec<_> = $bars
-            .iter()
-            .flat_map(|m| m.modules_left.iter().chain(m.modules_right.iter()))
-            .filter_map(|m| module_get!(m, $module))
-            .map(|m| m.stream().to_owned())
-            .collect();
-
-            if streams.len() > 0{
-                $run(streams);
-            }
-        }
-    )
-);
-
 fn main() {
     let app = gtk::Application::new(
         Some("io.github.polymeilex.yetanotherbar"),
@@ -82,13 +63,10 @@ fn main() {
         );
     }
 
-    let mut mpris = false;
-    let mut cpu = false;
-
-    let mut i3_thread = i3::i3_thread::I3Thread::new();
-    let mut alsa_thread = alsa::alsa_thread::AlsaThread::new();
-
-    let mut cpu_thread = cpu::cpu_thread::CpuThread::new();
+    let mut i3_thread = I3Thread::new();
+    let mut alsa_thread = AlsaThread::new();
+    let mut mpris_thread = MprisThread::new();
+    let mut cpu_thread = CpuThread::new();
 
     // Init Bars From Config
     let bars = {
@@ -122,8 +100,11 @@ fn main() {
                             ModuleComponent::Alsa(alsa)
                         }
                         config::Module::Mpris => {
-                            mpris = true;
-                            ModuleComponent::Mpris(relm::init::<crate::mpris::Mpris>(()).unwrap())
+                            let mpris =
+                                relm::init::<crate::mpris::Mpris>(mpris_thread.sender().clone())
+                                    .unwrap();
+                            mpris_thread.push_stream(mpris.stream().clone());
+                            ModuleComponent::Mpris(mpris)
                         }
                         config::Module::Cpu => {
                             let cpu = relm::init::<crate::cpu::Cpu>(()).unwrap();
@@ -169,16 +150,13 @@ fn main() {
         alsa_thread.run();
     }
     // Mpris Thread
-    if mpris {
-        thread_run!(mpris::mpris_thread::run, ModuleComponent::Mpris, bars);
+    if mpris_thread.should_run {
+        mpris_thread.run();
     }
     // Cpu Thread
     if cpu_thread.should_run {
         cpu_thread.run();
     }
-
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
     let running = Rc::new(RefCell::new(false));
 
