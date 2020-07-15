@@ -1,16 +1,16 @@
 use gtk::prelude::*;
 use relm::{Relm, Widget};
 use relm_derive::{widget, Msg};
-
-use std::{cell::RefCell, rc::Rc};
+use std::sync::mpsc;
 
 use super::i3_thread;
+use i3_thread::I3SenderEvent;
 
 pub struct Model {
     monitor_name: String,
     gtk_buttons: Vec<gtk::Button>,
     gtk_label: gtk::Label,
-    i3_connection: Rc<RefCell<i3ipc::I3Connection>>,
+    sender: mpsc::Sender<I3SenderEvent>,
 }
 
 #[derive(Msg, Clone)]
@@ -23,13 +23,15 @@ pub enum Msg {
 impl Widget for I3 {
     type ModelParam = String;
 
-    fn model(_: &Relm<Self>, monitor_name: String) -> Model {
-        let i3_connection = Rc::new(RefCell::new(i3ipc::I3Connection::connect().unwrap()));
+    fn model(
+        _: &Relm<Self>,
+        (monitor_name, sender): (String, mpsc::Sender<I3SenderEvent>),
+    ) -> Model {
         Model {
             monitor_name,
             gtk_buttons: Vec::new(),
             gtk_label: gtk::LabelBuilder::new().name("mode").build(),
-            i3_connection,
+            sender,
         }
     }
 
@@ -55,11 +57,11 @@ impl Widget for I3 {
 
                     let name = ws.name.clone();
 
-                    let i3_connection = self.model.i3_connection.clone();
+                    let sender = self.model.sender.clone();
                     btn.connect_clicked(move |_| {
-                        let _ = i3_connection
-                            .borrow_mut()
-                            .run_command(&format!("workspace {}", name));
+                        sender
+                            .send(I3SenderEvent::RunCommand(format!("workspace {}", name)))
+                            .unwrap();
                     });
 
                     self.gtk_box.pack_start(&btn, false, false, 0);

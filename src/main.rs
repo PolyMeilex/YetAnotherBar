@@ -1,7 +1,7 @@
 use gio::prelude::*;
 use gtk::prelude::*;
 
-use relm::{Component, Widget};
+use relm::Component;
 
 mod config;
 
@@ -82,10 +82,10 @@ fn main() {
         );
     }
 
-    let mut i3 = false;
     let mut mpris = false;
     let mut cpu = false;
 
+    let mut i3_thread = i3::i3_thread::I3Thread::new();
     let mut alsa_thread = alsa::alsa_thread::AlsaThread::new();
 
     // Init Bars From Config
@@ -102,10 +102,14 @@ fn main() {
                             ModuleComponent::Clock(relm::init::<crate::clock::Clock>(()).unwrap())
                         }
                         config::Module::I3 => {
-                            i3 = true;
-                            ModuleComponent::I3(
-                                relm::init::<crate::i3::I3>(config_bar.1.monitor.clone()).unwrap(),
-                            )
+                            let i = relm::init::<crate::i3::I3>((
+                                config_bar.1.monitor.clone(),
+                                i3_thread.sender().clone(),
+                            ))
+                            .unwrap();
+                            i3_thread.push_stream(i.stream().clone());
+
+                            ModuleComponent::I3(i)
                         }
                         config::Module::Alsa => {
                             let a = relm::init::<crate::alsa::Alsa>(alsa_thread.sender().clone())
@@ -152,8 +156,9 @@ fn main() {
     };
 
     // I3 Thread
-    if i3 {
-        thread_run!(i3::i3_thread::run, ModuleComponent::I3, bars);
+    if i3_thread.should_run {
+        // thread_run!(i3::i3_thread::run, ModuleComponent::I3, bars);
+        i3_thread.run();
     }
     // Alsa Thread
     if alsa_thread.should_run {
