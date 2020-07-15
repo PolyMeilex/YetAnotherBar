@@ -42,10 +42,11 @@ impl Widget for I3 {
                     unsafe { btn.destroy() };
                 }
 
-                for ws in workspaces.iter() {
-                    if ws.output != self.model.monitor_name {
-                        continue;
-                    }
+                let monitor_name = &self.model.monitor_name;
+                for ws in workspaces
+                    .into_iter()
+                    .filter(|ws| &ws.output == monitor_name)
+                {
                     let btn = gtk::Button::with_label(&ws.name);
 
                     if ws.focused {
@@ -55,12 +56,10 @@ impl Widget for I3 {
                         btn.get_style_context().add_class("urgent");
                     }
 
-                    let name = ws.name.clone();
-
                     let sender = self.model.sender.clone();
                     btn.connect_clicked(move |_| {
                         sender
-                            .send(I3ActionEvent::RunCommand(format!("workspace {}", name)))
+                            .send(I3ActionEvent::RunCommand(format!("workspace {}", ws.name)))
                             .unwrap();
                     });
 
