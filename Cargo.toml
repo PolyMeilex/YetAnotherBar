@@ -23,6 +23,3 @@ alsa = "0.4.1"
 mpris = "1.1.2"
 systemstat = "0.1.5"
 
-
-downcast-rs = "1.1.1"
-
