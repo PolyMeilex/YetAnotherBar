@@ -1,11 +1,15 @@
 use gtk::prelude::*;
 use gtk::Inhibit;
-use relm::Widget;
+use relm::{Relm, Widget};
 use relm_derive::{widget, Msg};
+use std::sync::mpsc;
+
+use super::alsa_thread::AlsaSenderEvent;
 
 pub struct Model {
     alsa_mixer: alsa::Mixer,
     volume: String,
+    sender: mpsc::Sender<AlsaSenderEvent>,
 }
 
 #[derive(Msg, Clone)]
@@ -17,10 +21,11 @@ pub enum Msg {
 
 #[widget]
 impl Widget for Alsa {
-    fn model() -> Model {
+    fn model(_relm: &Relm<Self>, sender: mpsc::Sender<AlsaSenderEvent>) -> Model {
         Model {
             alsa_mixer: alsa::Mixer::new("default", true).unwrap(),
             volume: "0%".into(),
+            sender,
         }
     }
 
@@ -38,49 +43,18 @@ impl Widget for Alsa {
                 }
             }
             Msg::Mute => {
-                let master = self
-                    .model
-                    .alsa_mixer
-                    .find_selem(&alsa::mixer::SelemId::new("Master", 0))
-                    .unwrap();
-                let state = master
-                    .get_playback_switch(alsa::mixer::SelemChannelId::FrontLeft)
-                    .unwrap();
-                if state == 0 {
-                    let _ = master.set_playback_switch_all(1);
-                } else {
-                    let _ = master.set_playback_switch_all(0);
-                }
+                self.model.sender.send(AlsaSenderEvent::Mute).unwrap();
             }
             Msg::VolumeChange(sd) => {
-                let _ = self.model.alsa_mixer.handle_events();
-
-                let master = self
-                    .model
-                    .alsa_mixer
-                    .find_selem(&alsa::mixer::SelemId::new("Master", 0))
-                    .unwrap();
                 let mult = match sd {
                     gdk::ScrollDirection::Up => 1,
                     gdk::ScrollDirection::Down => -1,
                     _ => return,
                 };
-                let (min, max) = master.get_playback_volume_range();
-                let volume_devider = max as f64 - min as f64;
-
-                let add = (5.0 * volume_devider / 100.0) as i64 * mult;
-
-                let mut volume = master
-                    .get_playback_volume(alsa::mixer::SelemChannelId::FrontLeft)
+                self.model
+                    .sender
+                    .send(AlsaSenderEvent::VolumeChange(5.0 * mult as f64))
                     .unwrap();
-
-                if volume + add > max {
-                    volume = max;
-                } else {
-                    volume += add;
-                }
-
-                let _ = master.set_playback_volume_all(volume);
             }
         }
     }

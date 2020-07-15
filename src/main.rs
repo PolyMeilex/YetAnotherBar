@@ -76,9 +76,11 @@ fn main() {
     }
 
     let mut i3 = false;
-    let mut alsa = false;
     let mut mpris = false;
     let mut cpu = false;
+
+    let mut alsa_thread = alsa::alsa_thread::AlsaThread::new();
+
     // Init Bars From Config
     let bars = {
         let config_bars = config.bars;
@@ -99,8 +101,11 @@ fn main() {
                             )
                         }
                         config::Module::Alsa => {
-                            alsa = true;
-                            ModuleComponent::Alsa(relm::init::<crate::alsa::Alsa>(()).unwrap())
+                            let a = relm::init::<crate::alsa::Alsa>(alsa_thread.sender().clone())
+                                .unwrap();
+                            alsa_thread.push_stream(a.stream().clone());
+
+                            ModuleComponent::Alsa(a)
                         }
                         config::Module::Mpris => {
                             mpris = true;
@@ -144,8 +149,8 @@ fn main() {
         thread_run!(i3::i3_thread::run, ModuleComponent::I3, bars);
     }
     // Alsa Thread
-    if alsa {
-        thread_run!(alsa::alsa_thread::run, ModuleComponent::Alsa, bars);
+    if alsa_thread.should_run {
+        alsa_thread.run();
     }
     // Mpris Thread
     if mpris {
