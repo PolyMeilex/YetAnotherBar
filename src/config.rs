@@ -1,7 +1,7 @@
-use serde_derive::Deserialize;
+use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Bar {
     pub monitor: String,
     pub pos_x: i32,
@@ -10,7 +10,7 @@ pub struct Bar {
     pub modules_right: Vec<Module>,
 }
 
-#[derive(Clone, PartialEq, Debug, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 pub enum Module {
     I3,
     Clock,
@@ -32,7 +32,7 @@ pub enum Module {
 //     Detailed(DetailedDep),
 // }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Config {
     pub bars: BTreeMap<String, Bar>,
 }
@@ -50,29 +50,29 @@ pub fn config_dir() -> Option<PathBuf> {
 pub fn get_config() -> (Config, Vec<u8>) {
     let config_dir = config_dir();
 
-    let default_config = include_str!("./config.toml");
+    let default_config = include_str!("./config.ron");
     let default_style = include_bytes!("./style.css");
 
-    let (toml_str, style_str) = if let Some(config_dir) = config_dir {
+    let (ron_str, style_str) = if let Some(config_dir) = config_dir {
         let bar_config_dir = config_dir.join("YetAnotherBar");
         let _ = std::fs::create_dir_all(&bar_config_dir);
-        let toml_str =
-            if let Ok(file) = std::fs::read_to_string(&bar_config_dir.join("config.toml")) {
-                file
-            } else {
-                default_config.into()
-            };
+        let ron_str = if let Ok(file) = std::fs::read_to_string(&bar_config_dir.join("config.ron"))
+        {
+            file
+        } else {
+            default_config.into()
+        };
         let style_str = if let Ok(file) = std::fs::read(&bar_config_dir.join("style.css")) {
             file
         } else {
             default_style.to_vec()
         };
-        (toml_str, style_str)
+        (ron_str, style_str)
     } else {
         (default_config.into(), default_style.to_vec())
     };
 
-    let decoded: Config = toml::from_str(&toml_str).unwrap();
+    let decoded: Config = ron::from_str(&ron_str).unwrap();
 
     (decoded, style_str)
 }
