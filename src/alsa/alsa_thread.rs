@@ -10,8 +10,6 @@ pub struct AlsaThread {
     streams: Vec<relm::EventStream<super::alsa::Msg>>,
     tx: mpsc::Sender<AlsaActionEvent>,
     rx: mpsc::Receiver<AlsaActionEvent>,
-
-    pub should_run: bool,
 }
 
 impl AlsaThread {
@@ -22,7 +20,6 @@ impl AlsaThread {
             streams: Vec::new(),
             tx,
             rx,
-            should_run: false,
         }
     }
     pub fn sender(&self) -> &mpsc::Sender<AlsaActionEvent> {
@@ -30,7 +27,9 @@ impl AlsaThread {
     }
     pub fn push_stream(&mut self, stream: relm::EventStream<super::alsa::Msg>) {
         self.streams.push(stream);
-        self.should_run = true;
+    }
+    pub fn should_run(&self) -> bool {
+        !self.streams.is_empty()
     }
     pub fn run(self) {
         let streams = self.streams;

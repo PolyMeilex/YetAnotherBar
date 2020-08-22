@@ -46,8 +46,6 @@ pub struct I3Thread {
     streams: Vec<relm::EventStream<super::i3::Msg>>,
     tx: mpsc::Sender<I3ActionEvent>,
     rx: mpsc::Receiver<I3ActionEvent>,
-
-    pub should_run: bool,
 }
 
 impl I3Thread {
@@ -58,7 +56,6 @@ impl I3Thread {
             streams: Vec::new(),
             tx,
             rx,
-            should_run: false,
         }
     }
     pub fn sender(&self) -> &mpsc::Sender<I3ActionEvent> {
@@ -66,7 +63,9 @@ impl I3Thread {
     }
     pub fn push_stream(&mut self, stream: relm::EventStream<super::i3::Msg>) {
         self.streams.push(stream);
-        self.should_run = true;
+    }
+    pub fn should_run(&self) -> bool {
+        !self.streams.is_empty()
     }
     pub fn run(self) {
         let streams = self.streams;
@@ -110,13 +109,13 @@ impl I3Thread {
                         ThreadEvent::I3icpEvent(event) => match event {
                             Event::WorkspaceEvent { .. } => get_workspaces_event(&mut i3_conn),
                             Event::ModeEvent(info) => super::i3::Msg::UpdateMode(info.change),
-                            _ => return (),
+                            _ => return,
                         },
                         ThreadEvent::ActionEvent(event) => {
                             match event {
                                 I3ActionEvent::RunCommand(c) => i3_conn.run_command(&c).unwrap(),
                             };
-                            return ();
+                            return;
                         }
                     };
                     sender.send(event).expect("i3_thread sennder");
@@ -149,10 +148,10 @@ impl I3Thread {
             }
 
             while i3_is_running.load(std::sync::atomic::Ordering::Relaxed) {
-                if let Ok(e) = rx.try_recv() {
+                if let Ok(e) = rx.recv() {
                     local_sender.send(ThreadEvent::ActionEvent(e)).unwrap();
                 }
-                std::thread::sleep(std::time::Duration::from_millis(100));
+                // std::thread::sleep(std::time::Duration::from_millis(100));
             }
 
             // After I3 Crashed or restarted we wait 2s before trying to connect again

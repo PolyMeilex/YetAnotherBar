@@ -146,34 +146,33 @@ fn main() {
     };
 
     // I3 Thread
-    if i3_thread.should_run {
+    if i3_thread.should_run() {
         i3_thread.run();
     }
     // Alsa Thread
-    if alsa_thread.should_run {
+    if alsa_thread.should_run() {
         alsa_thread.run();
     }
     // Mpris Thread
-    if mpris_thread.should_run {
+    if mpris_thread.should_run() {
         mpris_thread.run();
     }
     // Cpu Thread
-    if cpu_thread.should_run {
+    if cpu_thread.should_run() {
         cpu_thread.run();
     }
 
     let running = Rc::new(RefCell::new(false));
 
-    let r = running.clone();
     app.connect_activate(move |app| {
-        let running = *r.borrow();
+        let r = *running.borrow();
 
-        if !running {
+        if !r {
             bars.iter().for_each(|m| {
                 let _ = relm::init::<Bar>((m.clone(), app.clone())).unwrap();
             });
 
-            r.replace(true);
+            running.replace(true);
         }
     });
 

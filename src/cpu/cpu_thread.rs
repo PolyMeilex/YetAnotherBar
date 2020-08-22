@@ -1,19 +1,18 @@
 pub struct CpuThread {
     streams: Vec<relm::EventStream<super::cpu::Msg>>,
-
-    pub should_run: bool,
 }
 
 impl CpuThread {
     pub fn new() -> Self {
         Self {
             streams: Vec::new(),
-            should_run: false,
         }
     }
     pub fn push_stream(&mut self, stream: relm::EventStream<super::cpu::Msg>) {
         self.streams.push(stream);
-        self.should_run = true;
+    }
+    pub fn should_run(&self) -> bool {
+        !self.streams.is_empty()
     }
     pub fn run(self) {
         let streams = self.streams;

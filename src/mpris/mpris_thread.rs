@@ -17,7 +17,7 @@ fn find_active(finder: &mpris::PlayerFinder) -> Option<mpris::Player> {
             })
             .collect();
 
-        if active_list.len() > 0 {
+        if !active_list.is_empty() {
             Some(active_list.remove(0))
         } else {
             finder.find_active().ok()
@@ -31,8 +31,6 @@ pub struct MprisThread {
     streams: Vec<relm::EventStream<super::mpris::Msg>>,
     tx: mpsc::Sender<MpscActionEvent>,
     rx: mpsc::Receiver<MpscActionEvent>,
-
-    pub should_run: bool,
 }
 
 impl MprisThread {
@@ -43,7 +41,6 @@ impl MprisThread {
             streams: Vec::new(),
             tx,
             rx,
-            should_run: false,
         }
     }
     pub fn sender(&self) -> &mpsc::Sender<MpscActionEvent> {
@@ -51,7 +48,9 @@ impl MprisThread {
     }
     pub fn push_stream(&mut self, stream: relm::EventStream<super::mpris::Msg>) {
         self.streams.push(stream);
-        self.should_run = true;
+    }
+    pub fn should_run(&self) -> bool {
+        !self.streams.is_empty()
     }
     pub fn run(self) {
         let streams = self.streams;
