@@ -11,13 +11,20 @@ pub struct Bar {
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+pub struct CustomModule {
+    pub name: String,
+    pub exec: Vec<String>,
+    pub interval: u32,
+}
+
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 pub enum Module {
     I3,
     Clock,
     Alsa,
     Mpris,
     Cpu,
-    // Custom(String),
+    Custom(CustomModule),
 }
 
 // #[derive(Clone, Debug, Deserialize)]
@@ -56,12 +63,12 @@ pub fn get_config() -> (Config, Vec<u8>) {
     let (ron_str, style_str) = if let Some(config_dir) = config_dir {
         let bar_config_dir = config_dir.join("YetAnotherBar");
         let _ = std::fs::create_dir_all(&bar_config_dir);
-        let ron_str = if let Ok(file) = std::fs::read_to_string(&bar_config_dir.join("config.ron"))
-        {
-            file
-        } else {
-            default_config.into()
-        };
+        let ron_str: String =
+            if let Ok(file) = std::fs::read_to_string(&bar_config_dir.join("config.ron")) {
+                file
+            } else {
+                default_config.into()
+            };
         let style_str = if let Ok(file) = std::fs::read(&bar_config_dir.join("style.css")) {
             file
         } else {

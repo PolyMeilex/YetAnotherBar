@@ -10,6 +10,7 @@ mod config;
 
 mod bar;
 mod clock;
+mod custom;
 
 mod alsa;
 use crate::alsa::alsa_thread::AlsaThread;
@@ -29,6 +30,7 @@ pub enum ModuleComponent {
     Alsa(Component<crate::alsa::Alsa>),
     Mpris(Component<crate::mpris::Mpris>),
     Cpu(Component<crate::cpu::Cpu>),
+    Custom(Component<crate::custom::Custom>),
 }
 
 impl ModuleComponent {
@@ -39,6 +41,7 @@ impl ModuleComponent {
             ModuleComponent::Alsa(m) => m.widget().clone().upcast::<gtk::Widget>(),
             ModuleComponent::Mpris(m) => m.widget().clone().upcast::<gtk::Widget>(),
             ModuleComponent::Cpu(m) => m.widget().clone().upcast::<gtk::Widget>(),
+            ModuleComponent::Custom(m) => m.widget().clone().upcast::<gtk::Widget>(),
         }
     }
 }
@@ -116,30 +119,31 @@ fn main() {
 
                             ModuleComponent::Cpu(cpu)
                         }
+                        config::Module::Custom(config) => ModuleComponent::Custom(
+                            relm::init::<crate::custom::Custom>(config).unwrap(),
+                        ),
                     });
                 };
             }
 
-            let mut modules_left = Vec::new();
-
-            for module in &config_bar.1.modules_left {
-                match_module!(module, modules_left);
-            }
-
-            let mut modules_right = Vec::new();
-
-            for module in &config_bar.1.modules_right {
-                match_module!(module, modules_right);
-            }
-
-            bars.push(bar::ModelParam {
+            let mut param = bar::ModelParam {
                 bar_name: config_bar.0,
                 monitor_name: config_bar.1.monitor.clone(),
                 x: config_bar.1.pos_x,
                 y: config_bar.1.pos_y,
-                modules_left,
-                modules_right,
-            });
+                modules_left: Vec::new(),
+                modules_right: Vec::new(),
+            };
+
+            for module in config_bar.1.modules_left {
+                match_module!(module, param.modules_left);
+            }
+
+            for module in config_bar.1.modules_right {
+                match_module!(module, param.modules_right);
+            }
+
+            bars.push(param);
         }
 
         bars

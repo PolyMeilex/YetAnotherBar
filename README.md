@@ -10,14 +10,19 @@ On Arch linux you can install it from AUR [yetanotherbar-git](https://aur.archli
 # Example Config
 `` ~/.config/YetAnotherBar/config.ron``
 ```rust
-(
+Config(
 	bars: {
 		"bar-left": (
 			monitor: "DP-1",
 			pos_x: 0,
 			pos_y: 1000,
 			modules_left: [
-                I3
+                I3,
+				Custom((
+					name: "custom-ram",
+					exec: ["sh","/path/to/ram.sh"],
+					interval: 1000,
+				))
             ],
 			modules_right: [
 				Cpu,
