@@ -142,16 +142,15 @@ impl I3Thread {
                         };
                         local_sender.send(ThreadEvent::I3icpEvent(event)).unwrap();
                     }
-
                     i3_is_running.swap(false, std::sync::atomic::Ordering::Relaxed);
                 });
             }
 
             while i3_is_running.load(std::sync::atomic::Ordering::Relaxed) {
-                if let Ok(e) = rx.recv() {
+                if let Ok(e) = rx.try_recv() {
                     local_sender.send(ThreadEvent::ActionEvent(e)).unwrap();
                 }
-                // std::thread::sleep(std::time::Duration::from_millis(100));
+                std::thread::sleep(std::time::Duration::from_millis(100));
             }
 
             // After I3 Crashed or restarted we wait 2s before trying to connect again
