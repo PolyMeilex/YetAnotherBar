@@ -7,7 +7,6 @@ use crate::config::CustomModule;
 
 pub struct Model {
     config: CustomModule,
-    unfolded: bool,
     text: String,
 }
 
@@ -22,7 +21,6 @@ impl Widget for Custom {
     fn model(config: CustomModule) -> Model {
         Model {
             config,
-            unfolded: false,
             text: String::new(),
         }
     }
@@ -59,7 +57,7 @@ impl Widget for Custom {
     }
 
     fn init_view(&mut self) {
-        self.label.set_widget_name(&self.model.config.name);
+        self.widgets.label.set_widget_name(&self.model.config.name);
     }
 
     view! {

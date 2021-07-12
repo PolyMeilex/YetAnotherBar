@@ -28,7 +28,7 @@ fn find_active(finder: &mpris::PlayerFinder) -> Option<mpris::Player> {
 }
 
 pub struct MprisThread {
-    streams: Vec<relm::EventStream<super::mpris::Msg>>,
+    streams: Vec<relm::StreamHandle<super::mpris::Msg>>,
     tx: mpsc::Sender<MpscActionEvent>,
     rx: mpsc::Receiver<MpscActionEvent>,
 }
@@ -46,7 +46,7 @@ impl MprisThread {
     pub fn sender(&self) -> &mpsc::Sender<MpscActionEvent> {
         &self.tx
     }
-    pub fn push_stream(&mut self, stream: relm::EventStream<super::mpris::Msg>) {
+    pub fn push_stream(&mut self, stream: relm::StreamHandle<super::mpris::Msg>) {
         self.streams.push(stream);
     }
     pub fn should_run(&self) -> bool {

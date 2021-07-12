@@ -23,7 +23,7 @@ use crate::mpris::mpris_thread::MprisThread;
 
 use bar::Bar;
 
-#[derive(Clone)]
+// #[derive(Clone)]
 pub enum ModuleComponent {
     Clock(Component<crate::clock::Clock>),
     I3(Component<crate::i3::I3>),
@@ -50,12 +50,13 @@ fn main() {
     // After update from gtk 0.8.0 to 0.8.0 there is reason for init here for some reason
     // It probably should be investigated
     gtk::init().unwrap();
+    let main_context = glib::MainContext::default();
+    let _context = main_context.acquire().unwrap();
 
     let app = gtk::Application::new(
         Some("io.github.polymeilex.yetanotherbar"),
         Default::default(),
-    )
-    .expect("App Init Failed");
+    );
 
     let (config, stylesheet) = config::get_config();
 
@@ -64,7 +65,7 @@ fn main() {
         let style_provider = gtk::CssProvider::new();
         style_provider.load_from_data(&stylesheet).unwrap();
         gtk::StyleContext::add_provider_for_screen(
-            &gdk::Screen::get_default().unwrap(),
+            &gdk::Screen::default().unwrap(),
             &style_provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
@@ -84,7 +85,7 @@ fn main() {
         for config_bar in config_bars {
             macro_rules! match_module {
                 ($module:expr, $vec:expr) => {
-                    $vec.push(match $module {
+                    $vec.push(Rc::new(match $module {
                         config::Module::Clock => {
                             ModuleComponent::Clock(relm::init::<crate::clock::Clock>(()).unwrap())
                         }
@@ -122,7 +123,7 @@ fn main() {
                         config::Module::Custom(config) => ModuleComponent::Custom(
                             relm::init::<crate::custom::Custom>(config).unwrap(),
                         ),
-                    });
+                    }));
                 };
             }
 
@@ -180,5 +181,5 @@ fn main() {
         }
     });
 
-    app.run(&std::env::args().collect::<Vec<_>>());
+    app.run();
 }

@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use gtk::prelude::*;
 use gtk::{ApplicationWindow, Inhibit, WindowType};
 use relm::{connect, Relm, Update, Widget};
@@ -11,8 +13,8 @@ pub struct ModelParam {
     pub monitor_name: String,
     pub x: i32,
     pub y: i32,
-    pub modules_left: Vec<ModuleComponent>,
-    pub modules_right: Vec<ModuleComponent>,
+    pub modules_left: Vec<Rc<ModuleComponent>>,
+    pub modules_right: Vec<Rc<ModuleComponent>>,
 }
 
 pub struct Model {
@@ -109,8 +111,8 @@ impl Update for Bar {
 
 impl Bar {
     fn set_visual(window: &ApplicationWindow, _screen: Option<&gdk::Screen>) {
-        if let Some(screen) = window.get_screen() {
-            if let Some(ref visual) = screen.get_rgba_visual() {
+        if let Some(screen) = window.screen() {
+            if let Some(ref visual) = screen.rgba_visual() {
                 window.set_visual(Some(visual));
             }
         }

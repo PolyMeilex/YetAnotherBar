@@ -35,9 +35,9 @@ impl Widget for Alsa {
                 self.model.volume = p.to_string() + "%";
 
                 if state == 0 {
-                    self.gtk_label.get_style_context().add_class("muted");
+                    self.widgets.gtk_label.style_context().add_class("muted");
                 } else {
-                    self.gtk_label.get_style_context().remove_class("muted");
+                    self.widgets.gtk_label.style_context().remove_class("muted");
                 }
             }
             Msg::Mute => {
@@ -61,7 +61,7 @@ impl Widget for Alsa {
         gtk::EventBox{
             events: gdk::EventMask::SCROLL_MASK,
             button_press_event(_,_) => (Msg::Mute, Inhibit(false)),
-            scroll_event(_,se) => (Msg::VolumeChange(se.get_direction()),Inhibit(false)),
+            scroll_event(_,se) => (Msg::VolumeChange(se.direction()),Inhibit(false)),
 
             #[name="gtk_label"]
             gtk::Label {

@@ -43,7 +43,7 @@ fn get_workspaces_event(i3_conn: &mut i3ipc::I3Connection) -> super::i3::Msg {
 }
 
 pub struct I3Thread {
-    streams: Vec<relm::EventStream<super::i3::Msg>>,
+    streams: Vec<relm::StreamHandle<super::i3::Msg>>,
     tx: mpsc::Sender<I3ActionEvent>,
     rx: mpsc::Receiver<I3ActionEvent>,
 }
@@ -61,7 +61,7 @@ impl I3Thread {
     pub fn sender(&self) -> &mpsc::Sender<I3ActionEvent> {
         &self.tx
     }
-    pub fn push_stream(&mut self, stream: relm::EventStream<super::i3::Msg>) {
+    pub fn push_stream(&mut self, stream: relm::StreamHandle<super::i3::Msg>) {
         self.streams.push(stream);
     }
     pub fn should_run(&self) -> bool {

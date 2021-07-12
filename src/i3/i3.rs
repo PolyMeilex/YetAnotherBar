@@ -50,10 +50,10 @@ impl Widget for I3 {
                     let btn = gtk::Button::with_label(&ws.name);
 
                     if ws.focused {
-                        btn.get_style_context().add_class("focused");
+                        btn.style_context().add_class("focused");
                     }
                     if ws.urgent {
-                        btn.get_style_context().add_class("urgent");
+                        btn.style_context().add_class("urgent");
                     }
 
                     let sender = self.model.sender.clone();
@@ -63,8 +63,8 @@ impl Widget for I3 {
                             .unwrap();
                     });
 
-                    self.gtk_box.pack_start(&btn, false, false, 0);
-                    gtk::WidgetExt::show(&btn);
+                    self.widgets.gtk_box.pack_start(&btn, false, false, 0);
+                    WidgetExt::show(&btn);
                     self.model.gtk_buttons.push(btn);
                 }
             }
@@ -78,7 +78,8 @@ impl Widget for I3 {
         }
     }
     fn init_view(&mut self) {
-        self.gtk_box
+        self.widgets
+            .gtk_box
             .pack_end(&self.model.gtk_label, false, false, 5);
     }
 

@@ -49,7 +49,7 @@ impl Widget for Mpris {
             Msg::Status(status) => {
                 self.model.status = status;
 
-                let ctx = self.gtk_label.get_style_context();
+                let ctx = self.widgets.gtk_label.style_context();
 
                 match status {
                     Some(mpris::PlaybackStatus::Playing) => {

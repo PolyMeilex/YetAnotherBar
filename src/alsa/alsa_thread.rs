@@ -7,7 +7,7 @@ pub enum AlsaActionEvent {
 }
 
 pub struct AlsaThread {
-    streams: Vec<relm::EventStream<super::alsa::Msg>>,
+    streams: Vec<relm::StreamHandle<super::alsa::Msg>>,
     tx: mpsc::Sender<AlsaActionEvent>,
     rx: mpsc::Receiver<AlsaActionEvent>,
 }
@@ -25,7 +25,7 @@ impl AlsaThread {
     pub fn sender(&self) -> &mpsc::Sender<AlsaActionEvent> {
         &self.tx
     }
-    pub fn push_stream(&mut self, stream: relm::EventStream<super::alsa::Msg>) {
+    pub fn push_stream(&mut self, stream: relm::StreamHandle<super::alsa::Msg>) {
         self.streams.push(stream);
     }
     pub fn should_run(&self) -> bool {

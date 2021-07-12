@@ -1,5 +1,5 @@
 pub struct CpuThread {
-    streams: Vec<relm::EventStream<super::cpu::Msg>>,
+    streams: Vec<relm::StreamHandle<super::cpu::Msg>>,
 }
 
 impl CpuThread {
@@ -8,7 +8,7 @@ impl CpuThread {
             streams: Vec::new(),
         }
     }
-    pub fn push_stream(&mut self, stream: relm::EventStream<super::cpu::Msg>) {
+    pub fn push_stream(&mut self, stream: relm::StreamHandle<super::cpu::Msg>) {
         self.streams.push(stream);
     }
     pub fn should_run(&self) -> bool {
