@@ -1,5 +1,9 @@
 use std::sync::mpsc;
 
+lazy_static::lazy_static! {
+    pub static ref POPUP_OPEN : std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+}
+
 pub enum MpscActionEvent {
     PausePlay,
 }
@@ -65,6 +69,7 @@ impl MprisThread {
         std::thread::spawn(move || {
             let finder = mpris::PlayerFinder::new().expect("Could not connect to D-Bus");
             let mut active_player: Option<mpris::Player> = finder.find_active().ok();
+            let mut art_url = String::new();
 
             loop {
                 if let Some(ap) = &active_player {
@@ -98,6 +103,40 @@ impl MprisThread {
                         sender
                             .send(super::mpris::Msg::UpdateLabel)
                             .expect("mpris_thread send");
+
+                        if let Ok(meta) = player.get_metadata() {
+                            if let Some(url) = meta.art_url() {
+                                if url != &art_url {
+                                    art_url = url.into();
+
+                                    println!("{}", url);
+                                    // let url = reqwest::Url::parse(url).unwrap();
+                                    let url = url::Url::parse(url).unwrap();
+
+                                    let data = if url.scheme() == "file" {
+                                        println!("{}", url.path());
+
+                                        let path = form_urlencoded::parse(url.path().as_bytes())
+                                            .into_owned()
+                                            .next()
+                                            .unwrap()
+                                            .0;
+
+                                        println!("{:#?}", path);
+
+                                        std::fs::read(path).unwrap()
+                                    } else {
+                                        vec![]
+                                    };
+                                    // let data = reqwest::blocking::get(url).unwrap();
+                                    // .bytes().unwrap();
+
+                                    sender
+                                        .send(super::mpris::Msg::ArtImg(data))
+                                        .expect("mpris_thread send");
+                                }
+                            }
+                        }
 
                         if let mpris::PlaybackStatus::Paused | mpris::PlaybackStatus::Stopped =
                             status
