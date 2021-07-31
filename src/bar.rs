@@ -57,6 +57,26 @@ impl Widget for Bar {
             .app_paintable(true)
             .build();
 
+        #[cfg(feature = "wayland")]
+        // Blocked by: https://github.com/grelltrier/gtk-layer-shell-gir/pull/2
+        // if gtk_layer_shell::is_supported()
+        {
+            gtk_layer_shell::init_for_window(&gtk_window);
+            gtk_layer_shell::set_layer(&gtk_window, gtk_layer_shell::Layer::Top);
+            gtk_layer_shell::auto_exclusive_zone_enable(&gtk_window);
+
+            gtk_layer_shell::set_anchor(&gtk_window, gtk_layer_shell::Edge::Left, true);
+            gtk_layer_shell::set_anchor(&gtk_window, gtk_layer_shell::Edge::Right, true);
+            gtk_layer_shell::set_anchor(&gtk_window, gtk_layer_shell::Edge::Bottom, true);
+            gtk_layer_shell::set_anchor(&gtk_window, gtk_layer_shell::Edge::Top, false);
+
+            if let Some(display) = gdk::Display::default() {
+                if let Some(monitor) = display.monitor_at_point(model.params.x, model.params.y) {
+                    gtk_layer_shell::set_monitor(&gtk_window, &monitor)
+                }
+            }
+        }
+
         gtk_window.move_(model.params.x, model.params.y);
 
         Self::set_visual(&gtk_window, None);
