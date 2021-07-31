@@ -524,6 +524,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "gtk-layer-shell"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84940971c2c5a9691cd4909967b0a5c352e3b951dcfe86479b3863cf8b5d66cb"
+dependencies = [
+ "bitflags",
+ "gdk",
+ "glib",
+ "glib-sys",
+ "gtk",
+ "gtk-layer-shell-sys",
+ "libc",
+]
+
+[[package]]
+name = "gtk-layer-shell-sys"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbe202353a8d51b5f2e6a5002e694b01566991c30687972ee39a890d71415ac7"
+dependencies = [
+ "gdk-sys",
+ "glib-sys",
+ "gtk-sys",
+ "libc",
+ "system-deps",
+]
+
+[[package]]
 name = "gtk-sys"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1236,6 +1264,7 @@ dependencies = [
  "gio",
  "glib",
  "gtk",
+ "gtk-layer-shell",
  "i3ipc",
  "mpris",
  "relm",

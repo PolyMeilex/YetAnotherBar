@@ -1,4 +1,4 @@
-use gio::prelude::*;
+use gio::{prelude::*, ApplicationFlags};
 use gtk::prelude::*;
 
 use relm::Component;
@@ -23,7 +23,6 @@ use crate::mpris::mpris_thread::MprisThread;
 
 use bar::Bar;
 
-// #[derive(Clone)]
 pub enum ModuleComponent {
     Clock(Component<crate::clock::Clock>),
     I3(Component<crate::i3::I3>),
@@ -46,77 +45,83 @@ impl ModuleComponent {
     }
 }
 
-fn main() {
-    // After update from gtk 0.8.0 to 0.8.0 there is reason for init here for some reason
-    // It probably should be investigated
-    gtk::init().unwrap();
-    let main_context = glib::MainContext::default();
-    let _context = main_context.acquire().unwrap();
+pub struct Threads {
+    i3: I3Thread,
+    alsa: AlsaThread,
+    mpris: MprisThread,
+    cpu: CpuThread,
+}
 
+fn main() {
     let app = gtk::Application::new(
         Some("io.github.polymeilex.yetanotherbar"),
-        Default::default(),
+        ApplicationFlags::HANDLES_COMMAND_LINE,
     );
 
-    let (config, stylesheet) = config::get_config();
+    let bars: Rc<RefCell<Vec<bar::ModelParam>>> = Default::default();
 
-    // Stylesheet
-    {
-        let style_provider = gtk::CssProvider::new();
-        style_provider.load_from_data(&stylesheet).unwrap();
-        gtk::StyleContext::add_provider_for_screen(
-            &gdk::Screen::default().unwrap(),
-            &style_provider,
-            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-        );
-    }
+    app.connect_command_line(move |app, cli| {
+        if !cli.is_remote() {
+            let (config, stylesheet) = config::get_config();
 
-    let mut i3_thread = I3Thread::new();
-    let mut alsa_thread = AlsaThread::new();
-    let mut mpris_thread = MprisThread::new();
-    let mut cpu_thread = CpuThread::new();
+            let mut bars = bars.borrow_mut();
 
-    // Init Bars From Config
-    let bars = {
-        let config_bars = config.bars;
+            // Stylesheet
+            {
+                let style_provider = gtk::CssProvider::new();
+                style_provider.load_from_data(&stylesheet).unwrap();
+                gtk::StyleContext::add_provider_for_screen(
+                    &gdk::Screen::default().unwrap(),
+                    &style_provider,
+                    gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+                );
+            }
 
-        let mut bars = Vec::new();
+            let mut threads = Threads {
+                i3: I3Thread::new(),
+                alsa: AlsaThread::new(),
+                mpris: MprisThread::new(),
+                cpu: CpuThread::new(),
+            };
 
-        for config_bar in config_bars {
-            macro_rules! match_module {
-                ($module:expr, $vec:expr) => {
-                    $vec.push(Rc::new(match $module {
+            // Init Bars From Config
+            for config_bar in config.bars {
+                fn match_module(
+                    monitor: String,
+                    module: config::Module,
+                    threads: &mut Threads,
+                    list: &mut Vec<Rc<ModuleComponent>>,
+                ) {
+                    list.push(Rc::new(match module {
                         config::Module::Clock => {
                             ModuleComponent::Clock(relm::init::<crate::clock::Clock>(()).unwrap())
                         }
                         config::Module::I3 => {
-                            let i3 = relm::init::<crate::i3::I3>((
-                                config_bar.1.monitor.clone(),
-                                i3_thread.sender().clone(),
-                            ))
-                            .unwrap();
-                            i3_thread.push_stream(i3.stream().clone());
+                            let i3 =
+                                relm::init::<crate::i3::I3>((monitor, threads.i3.sender().clone()))
+                                    .unwrap();
+                            threads.i3.push_stream(i3.stream().clone());
 
                             ModuleComponent::I3(i3)
                         }
                         config::Module::Alsa => {
                             let alsa =
-                                relm::init::<crate::alsa::Alsa>(alsa_thread.sender().clone())
+                                relm::init::<crate::alsa::Alsa>(threads.alsa.sender().clone())
                                     .unwrap();
-                            alsa_thread.push_stream(alsa.stream().clone());
+                            threads.alsa.push_stream(alsa.stream().clone());
 
                             ModuleComponent::Alsa(alsa)
                         }
                         config::Module::Mpris => {
                             let mpris =
-                                relm::init::<crate::mpris::Mpris>(mpris_thread.sender().clone())
+                                relm::init::<crate::mpris::Mpris>(threads.mpris.sender().clone())
                                     .unwrap();
-                            mpris_thread.push_stream(mpris.stream().clone());
+                            threads.mpris.push_stream(mpris.stream().clone());
                             ModuleComponent::Mpris(mpris)
                         }
                         config::Module::Cpu => {
                             let cpu = relm::init::<crate::cpu::Cpu>(()).unwrap();
-                            cpu_thread.push_stream(cpu.stream().clone());
+                            threads.cpu.push_stream(cpu.stream().clone());
 
                             ModuleComponent::Cpu(cpu)
                         }
@@ -124,61 +129,61 @@ fn main() {
                             relm::init::<crate::custom::Custom>(config).unwrap(),
                         ),
                     }));
+                }
+
+                let mut param = bar::ModelParam {
+                    bar_name: config_bar.0,
+                    monitor_name: config_bar.1.monitor.clone(),
+                    x: config_bar.1.pos_x,
+                    y: config_bar.1.pos_y,
+                    modules_left: Vec::new(),
+                    modules_right: Vec::new(),
                 };
+
+                for module in config_bar.1.modules_left {
+                    match_module(
+                        config_bar.1.monitor.clone(),
+                        module,
+                        &mut threads,
+                        &mut param.modules_left,
+                    );
+                }
+
+                for module in config_bar.1.modules_right.clone() {
+                    match_module(
+                        config_bar.1.monitor.clone(),
+                        module,
+                        &mut threads,
+                        &mut param.modules_right,
+                    );
+                }
+
+                bars.push(param);
             }
 
-            let mut param = bar::ModelParam {
-                bar_name: config_bar.0,
-                monitor_name: config_bar.1.monitor.clone(),
-                x: config_bar.1.pos_x,
-                y: config_bar.1.pos_y,
-                modules_left: Vec::new(),
-                modules_right: Vec::new(),
-            };
-
-            for module in config_bar.1.modules_left {
-                match_module!(module, param.modules_left);
+            // I3 Thread
+            if threads.i3.should_run() {
+                threads.i3.run();
+            }
+            // Alsa Thread
+            if threads.alsa.should_run() {
+                threads.alsa.run();
+            }
+            // Mpris Thread
+            if threads.mpris.should_run() {
+                threads.mpris.run();
+            }
+            // Cpu Thread
+            if threads.cpu.should_run() {
+                threads.cpu.run();
             }
 
-            for module in config_bar.1.modules_right {
-                match_module!(module, param.modules_right);
-            }
-
-            bars.push(param);
-        }
-
-        bars
-    };
-
-    // I3 Thread
-    if i3_thread.should_run() {
-        i3_thread.run();
-    }
-    // Alsa Thread
-    if alsa_thread.should_run() {
-        alsa_thread.run();
-    }
-    // Mpris Thread
-    if mpris_thread.should_run() {
-        mpris_thread.run();
-    }
-    // Cpu Thread
-    if cpu_thread.should_run() {
-        cpu_thread.run();
-    }
-
-    let running = Rc::new(RefCell::new(false));
-
-    app.connect_activate(move |app| {
-        let r = *running.borrow();
-
-        if !r {
             bars.iter().for_each(|m| {
                 let _ = relm::init::<Bar>((m.clone(), app.clone())).unwrap();
             });
-
-            running.replace(true);
         }
+
+        0
     });
 
     app.run();
