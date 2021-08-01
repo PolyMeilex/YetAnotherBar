@@ -1,5 +1,9 @@
+use std::thread;
+use std::time::Duration;
+
 use gtk::prelude::*;
 use gtk::Inhibit;
+use relm::Channel;
 use relm::{Relm, Widget};
 use relm_derive::{widget, Msg};
 
@@ -8,52 +12,53 @@ use crate::config::CustomModule;
 pub struct Model {
     config: CustomModule,
     text: String,
+
+    _channel: Channel<Msg>,
 }
 
 #[derive(Msg)]
 pub enum Msg {
-    Tick,
     Click,
+    TextUpdate(String),
 }
 
 #[widget]
 impl Widget for Custom {
-    fn model(config: CustomModule) -> Model {
+    fn model(relm: &Relm<Self>, config: CustomModule) -> Model {
+        let stream = relm.stream().clone();
+        let (channel, sender) = Channel::new(move |msg| {
+            stream.emit(msg);
+        });
+
+        let c = config.clone();
+        thread::spawn(move || loop {
+            let mut exec = c.exec.clone();
+            let d = std::process::Command::new(&exec.remove(0))
+                .args(exec)
+                .output();
+
+            if let Ok(d) = d {
+                let text = String::from_utf8(d.stdout).unwrap();
+                sender.send(Msg::TextUpdate(text)).expect("send message");
+            }
+
+            thread::sleep(Duration::from_millis(c.interval as u64));
+        });
+
         Model {
             config,
             text: String::new(),
+            _channel: channel,
         }
     }
 
     fn update(&mut self, event: Msg) {
         match event {
-            Msg::Click => {
-                // self.model.unfolded = !self.model.unfolded;
-                // self.update(Msg::Tick);
-            }
-            Msg::Tick => {
-                if !self.model.config.exec.is_empty() {
-                    let mut exec = self.model.config.exec.clone();
-                    let d = std::process::Command::new(&exec.remove(0))
-                        .args(exec)
-                        .output();
-
-                    if let Ok(d) = d {
-                        self.model.text = String::from_utf8(d.stdout).unwrap();
-                    }
-                }
-
-                // if !self.model.unfolded {
-                //     self.model.time = format!("{}", time.format("%H:%M"));
-                // } else {
-                //     self.model.time = format!("{}", time.format("%Y-%m-%d"));
-                // }
+            Msg::Click => {}
+            Msg::TextUpdate(s) => {
+                self.model.text = s;
             }
         }
-    }
-    fn subscriptions(&mut self, relm: &Relm<Self>) {
-        self.update(Msg::Tick);
-        relm::interval(relm.stream(), self.model.config.interval, || Msg::Tick);
     }
 
     fn init_view(&mut self) {
@@ -66,7 +71,6 @@ impl Widget for Custom {
             #[name="label"]
             gtk::Label {
                 text: &self.model.text,
-                // widget_name: "custom"
             },
         }
     }
