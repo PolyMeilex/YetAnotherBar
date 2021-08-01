@@ -22,10 +22,7 @@ i3ipc = "0.10.1"
 alsa = "0.5.0"
 mpris = "1.1.2"
 systemstat = "0.1.5"
-gtk-layer-shell = { version="0.2.1", optional=true}
-
-# Blocked by: https://github.com/grelltrier/gtk-layer-shell-gir/pull/2
-# gtk-layer-shell = { version="0.2.1", features=["v0_5"] }
+gtk-layer-shell = { version="0.2.2", features=["v0_5"], optional=true}
 
 [features]
 default=[]

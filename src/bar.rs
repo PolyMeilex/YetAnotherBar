@@ -58,9 +58,7 @@ impl Widget for Bar {
             .build();
 
         #[cfg(feature = "wayland")]
-        // Blocked by: https://github.com/grelltrier/gtk-layer-shell-gir/pull/2
-        // if gtk_layer_shell::is_supported()
-        {
+        if gtk_layer_shell::is_supported() {
             gtk_layer_shell::init_for_window(&gtk_window);
             gtk_layer_shell::set_layer(&gtk_window, gtk_layer_shell::Layer::Top);
             gtk_layer_shell::auto_exclusive_zone_enable(&gtk_window);
