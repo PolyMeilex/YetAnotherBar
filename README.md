@@ -7,6 +7,9 @@ but I really like the idea of native status bar with CSS support so here you go 
 # Installation
 On Arch linux you can install it from AUR [yetanotherbar-git](https://aur.archlinux.org/packages/yetanotherbar-git)
 
+#### Wayland
+for Wayland you need `gtk-layer-shell` on your system, and YAB binary built with `wayland` feature flag
+
 # Example Config
 `` ~/.config/YetAnotherBar/config.ron``
 ```rust
