@@ -55,3 +55,5 @@ Config(
 For more info about CSS selectors visit [wiki](https://github.com/PolyMeilex/YetAnotherBar/wiki)
 ## Result
 ![img](https://i.imgur.com/GJ71oye.png)
+
+![img](https://i.imgur.com/ECgAEZj.png)
