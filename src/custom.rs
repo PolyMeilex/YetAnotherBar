@@ -70,7 +70,7 @@ impl Widget for Custom {
             button_press_event(_,_) => (Msg::Click, Inhibit(false)),
             #[name="label"]
             gtk::Label {
-                text: &self.model.text,
+                text: self.model.text.trim(),
             },
         }
     }
